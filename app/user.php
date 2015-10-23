@@ -42,4 +42,15 @@ function approveRegistration($id, $approver) {
 
 }
 
+// create 100 tans
+function createTans($userAccount) {
+
+}
+
+// update tan status
+function checkTanUniqueness($tan) {
+  
+}
+
+
 ?>

@@ -9,12 +9,14 @@ if (isset($_POST['submit'])) {
   $lastname = $_POST['lastname'];
   $password = $_POST['password'];
   $confirmPassword = $_POST['confirm_password'];
-  $usertype = $_POST['usertype'];;
+  $usertype = $_POST['usertype'];
   
   $register = createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname);
   if ($register->value) {
-    header("Location: "."view_transactions.php");
-  } else {
+    header("Location: ".$_SERVER['PHP_SELF']);
+  }
+
+  if (!empty($register->msg)) {
     $showMsg = $register->msg;
   }
 }

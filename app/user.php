@@ -3,7 +3,10 @@
 require_once "db.php";
 
 // set session variables
-function saveSession($email, $usertype) {
+function saveSession($email, $usertype, $firstname, $lastname, $userid) {
+  $_SESSION['userid'] = $userid;
+  $_SESSION['firstname'] = $firstname;
+  $_SESSION['lastname'] = $lastname;
   $_SESSION['email'] = $email;
   $_SESSION['usertype'] = $usertype;
 }
@@ -22,7 +25,10 @@ function isUserAuth() {
 function getAuthUser() {
   $user = array(
     "email" => $_SESSION['email'],
-    "usertype" => $_SESSION['usertype']
+    "usertype" => $_SESSION['usertype'],
+    "firstname" => $_SESSION['firstname'],
+    "lastname" => $_SESSION['lastname'],
+    "userid" => $_SESSION['userid']
   );
   return (object) $user;
 }
@@ -46,7 +52,12 @@ function login($email, $password) {
     return $return;
   }
 
-  saveSession($email, $usertype);
+  // save user to session
+  $firstname = $login['firstname'];
+  $lastname = $login['lastname'];
+  $userid = $login['userid'];
+  saveSession($email, $usertype, $firstname, $lastname, $userid);
+
   $return->value = true;
   $return->msg = "Login successful";
   return $return;
@@ -88,6 +99,16 @@ function createTans($userAccount) {
 // update tan status
 function checkTanUniqueness($tan) {
   
+}
+
+// get account data for a user
+function getAccountById($id) {
+
+}
+
+// get account data for a specific account number
+function getAccountByAccountNumber($number) {
+
 }
 
 

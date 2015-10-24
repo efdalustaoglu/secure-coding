@@ -10,8 +10,10 @@ if (isset($_POST['submit'])) {
   $login = login($email, $password);
   if ($login->value) {
     header("Location: "."view_transactions.php");
-  } else {
-    $showMsg = $login->msg;
+  } 
+
+  if (!empty($login->msg)) {
+     $showMsg = $login->msg;
   }
 }
 

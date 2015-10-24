@@ -1,15 +1,15 @@
 <?php
 
 $con ;
+$db_name="bank_db";
 
 function initConn(){
 
   $db_host="localhost";
   $db_username="";
   $db_pass="";
-  $db_name="bank_db";
 
-  $con = mysql_connect($db_host,$db_username,$db_pass);//connects to the DB in here
+  $GLOBALS["con"] = mysql_connect($db_host,$db_username,$db_pass);//connects to the DB in here
 }
 
 // opens a databse connection
@@ -17,11 +17,11 @@ function openDb() {
     
   initConn();
 
-  if (!$con){
+  if (!$GLOBALS["con"]){
       die('Could not connect: ' . mysql_error());
   }
 
-  $db_select = mysql_select_db($db_name, $con);
+  $db_select = mysql_select_db($GLOBALS["db_name"], $GLOBALS["con"]);
 
   mysql_query("SET NAMES 'utf8'");
   mysql_query("SET character_set_connection = 'utf8");
@@ -36,7 +36,7 @@ function openDb() {
 // closes a database connection 
 function closeDb() {
 
-  mysql_close($con);
+  mysql_close($GLOBALS["con"]);
 }
 
 // select all users

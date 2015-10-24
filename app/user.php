@@ -3,8 +3,8 @@
 require_once "db.php";
 
 // set session variables
-function saveSession($username, $usertype) {
-  $_SESSION['username'] = $username;
+function saveSession($email, $usertype) {
+  $_SESSION['email'] = $email;
   $_SESSION['usertype'] = $usertype;
 }
 
@@ -15,21 +15,41 @@ function startSession() {
 
 // check if user is authenticated
 function isUserAuth() {
-  return !empty($_SESSION['username']);
+  return !empty($_SESSION['email']);
 }
 
 // get session properties of authorized user
 function getAuthUser() {
-  $props = array(
-    "username" => $_SESSION['username'],
+  $user = array(
+    "email" => $_SESSION['email'],
     "usertype" => $_SESSION['usertype']
   );
-  return (object) $props;
+  return (object) $user;
 }
 
 // logs in user
 function login($email, $password) {
+  $return  = returnValue();
 
+  if (empty($email) || empty($password)) {
+    $return->value = false;
+    $return->msg = "You need to enter email and password";
+    return $return;
+  }
+  
+  $password = md5($password);
+  $login = selectByEmailAndPassword($email, $password);
+
+  if (count($login) !== 1) {
+    $return->value = false;
+    $return->msg = "Invalid login credentials";
+    return $return;
+  }
+
+  saveSession($email, $usertype);
+  $return->value = true;
+  $return->msg = "Login successful";
+  return $return;
 }
 
 // destroy user session

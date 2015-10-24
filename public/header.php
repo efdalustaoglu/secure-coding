@@ -55,7 +55,7 @@ if (isset($privileged) && $privileged) {
         <ul class="pure-menu-list pull-right">
           <li class="pure-menu-item">
             <a href="#!" class="pure-menu-link">
-              <b><?php echo getAuthUser()->username; ?></b>
+              <b><?php echo getAuthUser()->email; ?></b>
             </a>
           </li>
           <li class="pure-menu-item">

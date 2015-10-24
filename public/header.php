@@ -11,7 +11,7 @@ if (isset($privileged) && $privileged) {
 <!doctype html>
 <html>
 <head>
-  <title><?php echo $page_title; ?></title>
+  <title><?php echo $pageTitle; ?></title>
   <link rel="stylesheet" href="assets/css/pure-min.css">
   
   <!-- css overwrite -->
@@ -44,12 +44,24 @@ if (isset($privileged) && $privileged) {
       <div class="pure-menu pure-menu-horizontal">
         <a href="#" class="pure-menu-heading pure-menu-link">BANK-APP</a>
         <ul class="pure-menu-list">
-          <li class="pure-menu-item"><a href="#" class="pure-menu-link">Transactions</a></li>
-          <li class="pure-menu-item"><a href="#" class="pure-menu-link">Users</a></li>
+          <li class="pure-menu-item">
+            <a href="#" class="pure-menu-link">Transactions</a>
+          </li>
+          <li class="pure-menu-item">
+            <a href="#" class="pure-menu-link">Users</a>
+          </li>
         </ul>
+        <?php if (isUserAuth()): ?>
         <ul class="pure-menu-list pull-right">
-          <li class="pure-menu-item"><a href="#" class="pure-menu-link"><b>efeamadasun</b></a></li>
-          <li class="pure-menu-item"><a href="#" class="pure-menu-link">Logout</a></li>
+          <li class="pure-menu-item">
+            <a href="#!" class="pure-menu-link">
+              <b><?php echo getAuthUser()->username; ?></b>
+            </a>
+          </li>
+          <li class="pure-menu-item">
+            <a href="#" class="pure-menu-link">Logout</a>
+          </li>
         </ul>
+      <?php endif; ?>
       </div>
       <div class="divider"></div>

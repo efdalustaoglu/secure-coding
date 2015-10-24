@@ -1,11 +1,17 @@
 <?php
-$page_title = "Login";
+$pageTitle = "Login";
 
 // include header
 include("header.php");
 ?>
 
 <!-- content -->
+<?php
+// show error/success message, if any
+if (isset($showMsg) && !empty($showMsg)) {
+
+}
+?>
 
 <h3>Login</h3>
 <form class="pure-form pure-form-aligned">

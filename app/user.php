@@ -3,13 +3,28 @@
 require_once "db.php";
 
 // set session variables
-function saveSession($username) {
-
+function saveSession($username, $usertype) {
+  $_SESSION['username'] = $username;
+  $_SESSION['usertype'] = $usertype;
 }
 
 // start session
 function startSession() {
   session_start();
+}
+
+// check if user is authenticated
+function isUserAuth() {
+  return !empty($_SESSION['username']);
+}
+
+// get session properties of authorized user
+function getAuthUser() {
+  $props = array(
+    "username" => $_SESSION['username'],
+    "usertype" => $_SESSION['usertype']
+  );
+  return (object) $props;
 }
 
 // logs in user
@@ -19,7 +34,8 @@ function login($email, $password) {
 
 // destroy user session
 function logout () {
-
+  session_destroy();
+  header("Location: "."login.php");
 }
 
 // creates a user: employee or client

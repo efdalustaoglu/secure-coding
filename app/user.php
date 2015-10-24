@@ -59,8 +59,9 @@ function logout () {
 }
 
 // creates a user: employee or client
-function createUser($userType, $email, $password, $firstname, $lastname) {
-
+function createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname) {
+  $return  = returnValue();
+  return $return;
 }
 
 // gets all users in the databse
@@ -75,7 +76,8 @@ function getSingUser($id) {
 
 // approves a user registration
 function approveRegistration($id, $approver) {
-
+  $return  = returnValue();
+  return $return;
 }
 
 // create 100 tans

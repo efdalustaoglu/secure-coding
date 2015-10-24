@@ -1,4 +1,5 @@
 <?php
+
 require_once "../app/user.php";
 
 // start session if page the header is included in is privilieged
@@ -33,6 +34,12 @@ if (isset($privileged) && $privileged) {
     border-top: 1px solid #eee;
     margin: 15px 0;
   }
+
+  .show-msg {
+    padding: 10px;
+    background-color: #afeeee;
+    color: #000;
+  }
   </style>
 </head>
 
@@ -42,16 +49,16 @@ if (isset($privileged) && $privileged) {
   <div class="pure-g">
     <div class="pure-u-1-1">
       <div class="pure-menu pure-menu-horizontal">
-        <a href="#" class="pure-menu-heading pure-menu-link">BANK-APP</a>
+        <a href="#!" class="pure-menu-heading pure-menu-link">BANK-APP</a>
+        <?php if (isUserAuth()): ?>
         <ul class="pure-menu-list">
           <li class="pure-menu-item">
-            <a href="#" class="pure-menu-link">Transactions</a>
+            <a href="<?php echo 'view_transactions.php'; ?>" class="pure-menu-link">Transaction</a>
           </li>
           <li class="pure-menu-item">
-            <a href="#" class="pure-menu-link">Users</a>
+            <a href="<?php echo 'view_users.php'; ?>" class="pure-menu-link">User</a>
           </li>
         </ul>
-        <?php if (isUserAuth()): ?>
         <ul class="pure-menu-list pull-right">
           <li class="pure-menu-item">
             <a href="#!" class="pure-menu-link">
@@ -59,9 +66,18 @@ if (isset($privileged) && $privileged) {
             </a>
           </li>
           <li class="pure-menu-item">
-            <a href="#" class="pure-menu-link">Logout</a>
+            <a href="<?php echo 'logout.php'; ?>" class="pure-menu-link">Logout</a>
           </li>
         </ul>
       <?php endif; ?>
       </div>
       <div class="divider"></div>
+
+<?php
+
+// show error/success message, if any
+if (isset($showMsg) && !empty($showMsg)) {
+  echo "<div class='show-msg'>" . $showMsg . "</div>";
+}
+
+?>

@@ -12,9 +12,6 @@ if (isset($_POST['submit'])) {
   $usertype = $_POST['usertype'];
   
   $register = createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname);
-  if ($register->value) {
-    header("Location: ".$_SERVER['PHP_SELF']);
-  }
 
   if (!empty($register->msg)) {
     $showMsg = $register->msg;

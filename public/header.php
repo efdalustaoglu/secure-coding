@@ -22,7 +22,7 @@ if (isset($privileged) && $privileged) {
   }
 
   .container {
-    width: 800px;
+    width: 1000px;
     margin: 0 auto;
   }
 
@@ -40,6 +40,21 @@ if (isset($privileged) && $privileged) {
     background-color: #afeeee;
     color: #000;
   }
+
+  .button-success,
+  .button-error {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  }
+
+  .button-success {
+    background: rgb(28, 184, 65);
+  }
+
+  .button-error {
+    background: rgb(202, 60, 60);
+  }
   </style>
 </head>
 
@@ -49,7 +64,7 @@ if (isset($privileged) && $privileged) {
   <div class="pure-g">
     <div class="pure-u-1-1">
       <div class="pure-menu pure-menu-horizontal">
-        <a href="#!" class="pure-menu-heading pure-menu-link">BANK-APP</a>
+        <a href="#!" class="pure-menu-heading pure-menu-link"><b>BANK-APP</b></a>
         <?php if (isUserAuth()): ?>
         <ul class="pure-menu-list">
           <li class="pure-menu-item">

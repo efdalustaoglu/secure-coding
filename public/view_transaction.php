@@ -1,7 +1,11 @@
 <?php
 
+define('BANK_APP', TRUE);
+
 require_once "../app/user.php";
 require_once "../app/transaction.php";
+
+startSession();
 
 // process form
 if (isset($_POST['approve'])) {
@@ -15,9 +19,6 @@ if (isset($_POST['approve'])) {
     $showMsg = $approval->msg;
   }
 }
-
-// make this page available on when user is in session
-$privileged = true;
 
 // include header
 $pageTitle = "View Transaction";

@@ -1,5 +1,7 @@
 <?php
 
+if(!defined('BANK_APP')) { die('Direct access not permitted'); }
+
 // standard return object for functions that need to 
 // validate parameters and then return a value.
 // The value property is whatever the function will

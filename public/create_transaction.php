@@ -1,7 +1,11 @@
 <?php
 
+define('BANK_APP', TRUE);
+
 require_once "../app/user.php";
 require_once "../app/transaction.php";
+
+startSession();
 
 // process form
 if (isset($_POST['submit'])) {
@@ -19,9 +23,6 @@ if (isset($_POST['submit'])) {
     $showMsg = $transaction->msg;
   }
 }
-
-// make this page available on when user is in session
-$privileged = true;
 
 // include header
 $pageTitle = "Create Transaction";

@@ -1,10 +1,11 @@
 <?php
 
+define('BANK_APP', TRUE);
+
 require_once "../app/user.php";
 require_once "../app/transaction.php";
 
-// make this page available on when user is in session
-$privileged = true;
+startSession();
 
 // include header
 $pageTitle = "View Transactions";

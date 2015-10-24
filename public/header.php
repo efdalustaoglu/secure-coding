@@ -1,11 +1,8 @@
 <?php
 
-require_once "../app/user.php";
+if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 
-// start session if page the header is included in is privilieged
-if (isset($privileged) && $privileged) {
-  startSession();
-}
+require_once "../app/user.php";
 
 ?>
 

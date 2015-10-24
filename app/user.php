@@ -1,5 +1,7 @@
 <?php
 
+if(!defined('BANK_APP')) { die('Direct access not permitted'); }
+
 require_once "db.php";
 
 // set session variables

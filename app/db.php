@@ -79,6 +79,7 @@ function updateTransactionApproval($id, $approver, $decison) {
 function insertTan($userAccount, $tan) {
   // default tan status is V - valid
   openDb();
+  
 
   closeDb();
 }

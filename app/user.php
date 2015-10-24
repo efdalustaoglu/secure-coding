@@ -79,16 +79,16 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
 
 // gets all users in the databse
 function getUsers() {
-  selectUsers();
+  
 }
 
 // gets a single user from the db
-function getSingUser($id) {
+function getSingleUser($id) {
   selectUser($id);
 }
 
 // approves a user registration
-function approveRegistration($id, $approver) {
+function approveRegistration($id, $approver, $decision) {
   $return  = returnValue();
   return $return;
 }

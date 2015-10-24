@@ -18,6 +18,10 @@ if (isset($_POST['submit'])) {
   if (!empty($register->msg)) {
     $showMsg = $register->msg;
   }
+
+  // clear POST data
+  $_POST = array();
+
 }
 
 // include header

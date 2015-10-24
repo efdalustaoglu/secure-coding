@@ -7,6 +7,8 @@ require_once "../app/transaction.php";
 
 startSession();
 
+$transaction = getTransactions();
+
 // include header
 $pageTitle = "View Transactions";
 include("header.php");

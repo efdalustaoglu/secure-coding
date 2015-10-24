@@ -7,10 +7,16 @@ require_once "../app/transaction.php";
 
 startSession();
 
+// get single transaction
+if (isset($_GET['id'])) {
+  $id = $_GET['id'];
+  $transaction = getSingleTransaction($id);
+}
+
 // process form
-if (isset($_POST['approve'])) {
+if (isset($_POST['approve']) || isset($_POST['deny'])) {
   $id = $_POST['transactionid'];
-  $decision = true;
+  $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
 
   $approval = approveTransaction($id, $approver, $decison);
@@ -18,6 +24,9 @@ if (isset($_POST['approve'])) {
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
   }
+
+  // clear POST data
+  $_POST = array();
 }
 
 // include header
@@ -26,6 +35,7 @@ include("header.php");
 
 ?>
 
+<?php if (isset($transaction) && $transaction): ?>
 <h3>View Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
   <fieldset>
@@ -78,6 +88,7 @@ include("header.php");
 </form>
 
 <?php 
+endif;
 
 // include footer
 include("footer.php"); 

@@ -45,7 +45,22 @@ function approveRegistration($id, $approver) {
 // create 100 tans
 function createTans($userAccount) {
 
+	for ($i=0; $i < 100; $i++) { 
+		
+		$newTan = generateTan();
+		insertTan($userAccount, $newTan);
+	}
 }
+
+function generateTan(){
+  $characters = '0123456789ABCDEFGHIJKLMNOPRSTUVWXYZ';
+  $randomString = '';
+  for ($i = 0; $i < 15; $i++)
+    $randomString .= $characters[rand(0, strlen($characters) - 1)];
+
+  return $randomString;
+}
+
 
 // update tan status
 function checkTanUniqueness($tan) {

@@ -75,7 +75,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
       return $res;
     }
   }
-  $action = insertTransaction($sender,$recipient,$amount,$tan);
+  $action = insertTransaction($sender,$recipient,$amount,$tan_record[0]);
   if (!$action) {
     $res->value = false;
     $res->msg = "Transaction failed";

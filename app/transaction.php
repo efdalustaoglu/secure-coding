@@ -21,12 +21,12 @@ function getSingleTransaction($id) {
 function createTransaction($sender, $recipient, $amount, $tan) {
   //TODO: check if parameters are valid
   $res = returnValue();
-  if (!is_int($sender) && $sender < 1) {
+  if (!is_int((int)$sender) or $sender < 1) {
     $res->value = false;
     $res->msg = "Invalid sender";
     return $res;
   }
-  if (!is_int($recipient) && $recipient < 1) {
+  if (!is_int((int)$recipient) or $recipient < 1) {
     $res->value = false;
     $res->msg = "Invalid recipient";
     return $res;
@@ -36,12 +36,12 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     $res->msg = "Invalid transaction";
     return $res;
   }
-  if (!is_int($amount) && $amount < 1) {
+  if (!is_int((int)$amount) or $amount < 1) {
     $res->value = false;
     $res->msg = "Invalid amount";
     return $res;
   }
-  if (preg_match('/[^A-Za-z0-9]/', $tan)) {
+  if (empty($tan) or preg_match('/[^A-Za-z0-9]/', $tan)) {
     $res->value = false;
     $res->msg = "Invalid TAN";
     return $res;

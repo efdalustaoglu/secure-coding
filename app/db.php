@@ -30,13 +30,53 @@ function openDb() {
 
   if(!$db_select){ 
     die("Error when selecting the DB:".mysql_error());
+
+//if(!defined('BANK_APP')) { die('Direct access not permitted'); }
+//
+//// standard return object for functions that need to 
+//// validate parameters and then return a value.
+//// The value property is whatever the function will
+//// ordinarily return, and should always be set.
+//// The msg property is optional, and contains error 
+//// (e.g. failed validation) or success messages where appropriate
+//function returnValue() {
+//  $return = array(
+//    "value" => null,
+//    "msg" => null
+//  );
+//  return (object) $return;
+//}
+//
+//// functions on this page (db.php) should not use the returnValue() function
+//// because they should not do any validation, all parameters sent to functions
+//// here should have been pre-validated. For functions that return queries
+//// an array representation of the data should be returned. You could use
+//// mysqli_fetch_array, or some other method
+//
+//// prefer mysqli over mysql. the i in mysqli stands for improved.
+//
+//// global vars
+//$connection = null;
+//
+//// opens a databse connection
+//function openDb() {
+//  $host = "";
+//  $username = "";
+//  $password = "";
+//  $database = "";
+//  // create connection
+//  $connection = new mysqli($host, $username, $password, $database);
+//
+//  // check if connection was successful
+//  if ($connection->connect_error) {
+//    die("MYSQL connection failed: ". $connection->connect_error);
+//>>>>>>> origin/efe
   }
 }
 
 // closes a database connection 
 function closeDb() {
-
-  mysql_close($GLOBALS["con"]);
+  $connection->close();
 }
 
 // select all users
@@ -77,6 +117,7 @@ function selectUser($id) {
 function selectByEmailAndPassword($email, $password) {
 
   openDb();
+<<<<<<< HEAD
 
   $sql = "SELECT * FROM `users` WHERE EMAIL = '".$email."' AND PASSWORD = '".$password."'";
 

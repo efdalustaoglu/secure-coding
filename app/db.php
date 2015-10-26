@@ -49,7 +49,6 @@ function closeDb(&$connection) {
 
 // execute query that returns a recordset
 function executeQuery($sql, &$connection, $findFirst = false) {
-  $connection = $connection ? $connection : openDb();
   $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
 
   $resultSet = [];
@@ -62,14 +61,13 @@ function executeQuery($sql, &$connection, $findFirst = false) {
   // a single record
   if ($findFirst) {
     $resultSet = (count($resultSet) > 0) ? $resultSet[0] : null; 
-  }
+  } 
 
   return $resultSet;
 }
 
 // execute query that does not return a recordset
 function executeNonQuery($sql, &$connection) {
-  $connection = $connection ? $connection : openDb();
   $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
   closeDb($connection);
 
@@ -85,7 +83,7 @@ function escape($value, &$connection) {
 // select all users
 function selectUsers() {
   $connection = openDb();
-  $sql = "SELECT * FROM users";
+  $sql = "SELECT * FROM users_view";
   return executeQuery($sql, $connection);
 }
 
@@ -103,7 +101,7 @@ function selectByEmailAndPassword($email, $password) {
   $email = escape($email, $connection);
   $password = escape($password, $connection);
 
-  $sql = "SELECT * FROM users_view WHERE EMAIL = '$email' AND PASSWORD = '$password' AND DATE_APPROVED IS NOT NULL";
+  $sql = "SELECT * FROM users WHERE EMAIL = '$email' AND PASSWORD = '$password' AND DATE_APPROVED IS NOT NULL";
   return executeQuery($sql, $connection, true);
 }
 

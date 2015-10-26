@@ -81,6 +81,15 @@ require_once "../app/user.php";
             <a href="<?php echo 'logout.php'; ?>" class="pure-menu-link">Logout</a>
           </li>
         </ul>
+      <?php else: ?>
+      <ul class="pure-menu-list">
+        <li class="pure-menu-item">
+          <a href="<?php echo 'login.php'; ?>" class="pure-menu-link">Login</a>
+        </li>
+        <li class="pure-menu-item">
+          <a href="<?php echo 'register.php'; ?>" class="pure-menu-link">Register</a>
+        </li>
+      </ul>
       <?php endif; ?>
       </div>
       <div class="divider"></div>

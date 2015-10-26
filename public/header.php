@@ -74,7 +74,7 @@ require_once "../app/user.php";
         <ul class="pure-menu-list pull-right">
           <li class="pure-menu-item">
             <a href="#!" class="pure-menu-link">
-              <b><?php echo getAuthUser()->email; ?></b>
+              <b><?php echo getAuthUser()->firstname.' '.getAuthUser()->lastname; ?></b>
             </a>
           </li>
           <li class="pure-menu-item">

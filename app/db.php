@@ -48,21 +48,27 @@ function closeDb(&$connection) {
 }
 
 // execute query that returns a recordset
-function executeQuery($sql, $connection = false) {
+function executeQuery($sql, &$connection, $findFirst = false) {
   $connection = $connection ? $connection : openDb();
   $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
 
   $resultSet = [];
   while ($row = mysqli_fetch_assoc($result)) {
-    $resultSet[] = $row;
+    $resultSet[] = (object) $row;
   }
   closeDb($connection);
+
+  // return the first result only. useful when query for just 
+  // a single record
+  if ($findFirst) {
+    $resultSet = (count($resultSet) > 0) ? $resultSet[0] : null; 
+  }
 
   return $resultSet;
 }
 
 // execute query that does not return a recordset
-function executeNonQuery($sql, $connection = false) {
+function executeNonQuery($sql, &$connection) {
   $connection = $connection ? $connection : openDb();
   $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
   closeDb($connection);
@@ -72,19 +78,23 @@ function executeNonQuery($sql, $connection = false) {
   return $result;
 }
 
-function escape($value, $connection) {
+function escape($value, &$connection) {
   return mysqli_real_escape_string($connection, $value);
 }
 
 // select all users
 function selectUsers() {
+  $connection = openDb();
   $sql = "SELECT * FROM users";
-  return executeQuery($sql);
+  return executeQuery($sql, $connection);
 }
 
 // select a user by ID
 function selectUser($id) {
+  $connection = openDb();
   $id = (int) $id;
+  $sql = "SELECT * FROM users WHERE ID = $id";
+  return executeQuery($sql, $connection, true);
 }
 
 // select a user by email and password
@@ -92,6 +102,9 @@ function selectByEmailAndPassword($email, $password) {
   $connection = openDb();
   $email = escape($email, $connection);
   $password = escape($password, $connection);
+
+  $sql = "SELECT * FROM users_view WHERE EMAIL = '$email' AND PASSWORD = '$password' AND DATE_APPROVED IS NOT NULL";
+  return executeQuery($sql, $connection, true);
 }
 
 // insert into user table
@@ -111,8 +124,13 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
 
 // update user registration
 function updateUserRegistration($id, $approver) {
+  $connection = openDb();
   $id = (int) $id;
   $approver = (int) $approver;
+  $date = date('Y-m-d');
+
+  $sql = "UPDATE users SET APPROVED_BY = $approver, DATE_APPROVED = '$date' WHERE ID = $id";
+  return executeQuery($sql, $connection);
 }
 
 // select all transactions

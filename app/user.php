@@ -6,6 +6,7 @@ require_once "db.php";
 
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
+  startSession();
   $_SESSION['userid'] = $userid;
   $_SESSION['firstname'] = $firstname;
   $_SESSION['lastname'] = $lastname;
@@ -15,12 +16,14 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 
 // start session
 function startSession() {
-  session_start();
+  if (session_id() === '') {
+    session_start();
+  }
 }
 
 // check if user is authenticated
 function isUserAuth() {
-  return !empty($_SESSION['email']);
+  return !empty($_SESSION['userid']);
 }
 
 // get session properties of authorized user
@@ -48,16 +51,17 @@ function login($email, $password) {
   $password = md5($password);
   $login = selectByEmailAndPassword($email, $password);
 
-  if (count($login) !== 1) {
+  if (!$login) {
     $return->value = false;
     $return->msg = "Invalid login credentials";
     return $return;
   }
 
   // save user to session
-  $firstname = $login['firstname'];
-  $lastname = $login['lastname'];
-  $userid = $login['userid'];
+  $firstname = $login->FIRST_NAME;
+  $lastname = $login->LAST_NAME;
+  $userid = $login->ID;
+  $usertype = $login->USER_TYPE;
   saveSession($email, $usertype, $firstname, $lastname, $userid);
 
   $return->value = true;

@@ -74,12 +74,53 @@ function logout () {
 // creates a user: employee or client
 function createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname) {
   $return  = returnValue();
+
+  // check for empty fields
+  if (empty($firstname) || empty($lastname)) {
+    $return->value = false;
+    $return->msg = "Firstname or lastname is empty";
+    return $return;
+  }
+
+  // validate email format
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $return->value = false;
+    $return->msg = "Invalid email format";
+    return $return;
+  }
+
+  // check if usertype is among valid values
+  if ($userType !== "E" && $userType !== "C") {
+    $return->value = false;
+    $return->msg = "Invalid user type";
+    return $return;
+  }
+
+  // check if passwords match
+  if ($password !== $confirmPassword) {
+    $return->value = false;
+    $return->msg = "Passwords do not match";
+    return $return;
+  }
+
+  $password = md5($password);
+  $insert = insertUser($userType, $email, $password, $firstname, $lastname);
+
+  // check if db operation failed
+  if (!$insert) {
+    $return->value = false;
+    $return->msg = "DB insert operation failed";
+    return $return;
+  }
+
+  $return->value = true;
+  $return->msg = "Registration successful";
   return $return;
 }
 
 // gets all users in the databse
 function getUsers() {
-  
+  return selectUsers();
 }
 
 // gets a single user from the db

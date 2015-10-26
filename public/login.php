@@ -4,6 +4,8 @@ define('BANK_APP', TRUE);
 
 require_once "../app/user.php";
 
+print_r(getUsers());
+
 // process form
 if (isset($_POST['submit'])) {
   $email = $_POST['email'];

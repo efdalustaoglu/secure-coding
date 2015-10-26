@@ -24,62 +24,95 @@ function returnValue() {
 
 // prefer mysqli over mysql. the i in mysqli stands for improved.
 
-// global vars
-$connection = null;
-
 // opens a databse connection
 function openDb() {
-  $host = "";
-  $username = "";
+  $host = "localhost";
+  $username = "root";
   $password = "";
-  $database = "";
+  $database = "bank_db";
+
   // create connection
-  $connection = new mysqli($host, $username, $password, $database);
+  $connection = mysqli_connect($host, $username, $password, $database);
 
   // check if connection was successful
-  if ($connection->connect_error) {
-    die("MYSQL connection failed: ". $connection->connect_error);
+  if (mysqli_connect_errno()) {
+    die("MYSQL connection failed: ". mysqli_connect_error());
   }
+
+  return $connection;
 }
 
 // closes a database connection 
-function closeDb() {
-  $connection->close();
+function closeDb(&$connection) {
+  mysqli_close($connection);
+}
+
+// execute query that returns a recordset
+function executeQuery($sql, $connection = false) {
+  $connection = $connection ? $connection : openDb();
+  $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
+
+  $resultSet = [];
+  while ($row = mysqli_fetch_assoc($result)) {
+    $resultSet[] = $row;
+  }
+  closeDb($connection);
+
+  return $resultSet;
+}
+
+// execute query that does not return a recordset
+function executeNonQuery($sql, $connection = false) {
+  $connection = $connection ? $connection : openDb();
+  $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
+  closeDb($connection);
+
+  // as a non select query, it won't return a mysqli result set
+  // it returns true or false depending on success or failure
+  return $result;
+}
+
+function escape($value, $connection) {
+  return mysqli_real_escape_string($connection, $value);
 }
 
 // select all users
 function selectUsers() {
-  openDb();
-
-  closeDb();
+  $sql = "SELECT * FROM users";
+  return executeQuery($sql);
 }
 
 // select a user by ID
 function selectUser($id) {
-  openDb();
-
-  closeDb();
+  $id = (int) $id;
 }
 
 // select a user by email and password
 function selectByEmailAndPassword($email, $password) {
-  openDb();
-  
-  closeDb();
+  $connection = openDb();
+  $email = escape($email, $connection);
+  $password = escape($password, $connection);
 }
 
 // insert into user table
 function insertUser($userType, $email, $password, $firstname, $lastname) {
-  openDb();
-  $date = date('d.m.Y H:i');
-  closeDb();
+  $connection = openDb();
+  $date = date('Y-m-d');
+  $userType = escape($userType, $connection);
+  $email = escape($email, $connection);
+  $password = escape($password, $connection);
+  $firstname = escape($firstname, $connection);
+  $lastname = escape($lastname, $connection);
+
+  $sql = "INSERT INTO users(USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
+  $sql.= "VALUES ('$userType', '$email', '$password', '$firstname', '$lastname', '$date')";
+  return executeNonQuery($sql, $connection);
 }
 
 // update user registration
 function updateUserRegistration($id, $approver) {
-  openDb();
-
-  closeDb();
+  $id = (int) $id;
+  $approver = (int) $approver;
 }
 
 // select all transactions

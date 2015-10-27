@@ -15,9 +15,19 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 }
 
 // start session
-function startSession() {
+function startSession($privileged = false) {
   if (session_id() === '') {
     session_start();
+  }
+
+  if ($privileged) {
+    checkAccess();
+  }
+}
+
+function checkAccess() {
+  if (!isUserAuth()) {
+    logout();
   }
 }
 
@@ -155,6 +165,14 @@ function getAccountById($id) {
 
 // get account data for a specific account number
 function getAccountByAccountNumber($number) {
+
+}
+
+function sendEmail() {
+
+}
+
+function generateAccoutnNumber() {
 
 }
 

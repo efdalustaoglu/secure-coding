@@ -31,4 +31,8 @@ function parseTransactionFile($path, $sender) {
 
 }
 
+function generateTransactionPdf() {
+
+}
+
 ?>

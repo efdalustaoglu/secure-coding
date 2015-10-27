@@ -4,7 +4,7 @@ define('BANK_APP', TRUE);
 
 require_once "../app/user.php";
 
-startSession();
+startSession(true);
 
 // get single user
 $id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : getAuthUser()->userid;

@@ -5,7 +5,7 @@ define('BANK_APP', TRUE);
 require_once "../app/user.php";
 require_once "../app/transaction.php";
 
-startSession();
+startSession(true);
 
 $transaction = getTransactions();
 

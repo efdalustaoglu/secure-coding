@@ -7,88 +7,115 @@ require_once "db.php";
 // gets all transactions
 function getTransactions() {
   $transactions = selectTransactions();
+  if (!$transactions) {
+    $return->value = false;
+    $return->msg = "Transaction not found";
+    return $return;
+  }
   return $transactions;
 }
 
 // gets a single transaction
 function getSingleTransaction($id) {
   $transaction = selectTransaction();
+  if (!$transaction) {
+    $return->value = false;
+    $return->msg = "Transaction not found";
+    return $return;
+  }
   return $transaction;
-
 }
 
 // creates a transaction
 function createTransaction($sender, $recipient, $amount, $tan) {
   //TODO: check if parameters are valid
-  $res = returnValue();
-  if (!is_int((int)$sender) or $sender < 1) {
-    $res->value = false;
-    $res->msg = "Bad Request: Sender account must be a positive integer.";
-    return $res;
+  $return = returnValue();
+  if (!filter_var($sender, FILTER_VALIDATE_INT) or $sender < 1) {
+    $return->value = false;
+    $return->msg = "Bad Request: Sender account must be a positive integer.";
+    return $return;
   }
-  if (!is_int((int)$recipient) or $recipient < 1) {
-    $res->value = false;
-    $res->msg = "Bad Request: Recipient account must be a positive integer.";
-    return $res;
+  if (!filter_var($recipient, FILTER_VALIDATE_INT) or $recipient < 1) {
+    $return->value = false;
+    $return->msg = "Bad Request: Recipient account must be a positive integer.";
+    return $return;
   }
   if ($recipient == $sender) {
-    $res->value = false;
-    $res->msg = "Bad Request: Recipient account must be different from sender.";
-    return $res;
+    $return->value = false;
+    $return->msg = "Bad Request: Recipient account must be different from sender.";
+    return $return;
   }
-  if (!is_int((int)$amount) or $amount < 1) {
-    $res->value = false;
-    $res->msg = "Bad Request: Amount must be a positive integer.";
-    return $res;
+  if (!filter_var($amount, FILTER_VALIDATE_INT) or $amount < 1) {
+    $return->value = false;
+    $return->msg = "Bad Request: Amount must be a positive integer.";
+    return $return;
   }
   if (empty($tan) or preg_match('/[^A-Za-z0-9]/', $tan)) {
-    $res->value = false;
-    $res->msg = "Bad Request: Malformed TAN";
-    return $res;
+    $return->value = false;
+    $return->msg = "Bad Request: Malformed TAN";
+    return $return;
   }
-  $sender_account = selectAccount($sender);
-  if (!$sender_account->num_rows) {
-    $res->value = false;
-    $res->msg = "Not Found: Sender account";
-    return $res;
-  } else if (($sender_account->fetch_row())[3] < $amount) {
-      $res->value = false;
-      $res->msg = "Bad Request: Amount to be transferred greater than balance";
-      return $res;
+  $sender_account = selectAccount($sender); //I think a selectAccount() is needed (?)
+  if (!$sender_account) {
+    $return->value = false;
+    $return->msg = "Not Found: Sender account";
+    return $return;
+  } else if ($sender_account[3] < $amount) {
+      $return->value = false;
+      $return->msg = "Bad Request: Amount to be transferred greater than balance";
+      return $return;
   }
   $rec_account = selectAccount($recipient);
-  if (!$rec_account->num_rows) {
-    $res->value = false;
-    $res->msg = "Not Found: Recipient account";
-    return $res;
+  if ($rec_account) {
+    $return->value = false;
+    $return->msg = "Not Found: Recipient account";
+    return $return;
   }
-  $tan_request = getSingleTan($tan);
-  if (!$tan_request->num_rows) {
-    $res->value = false;
-    $res->msg = "Invalid TAN";
-    return $res;
+  $tan_record = getSingleTan($tan);
+  if (!$tan_record) {
+    $return->value = false;
+    $return->msg = "Invalid TAN";
+    return $return;
   } else {
-    $tan_record = $tan_request->fetch_row();
-    if ($tan_record[2] != $sender || strcmp($tan_record[3],"V")) {
-      $res->value = false;
-      $res->msg = "Invalid TAN";
-      return $res;
+    if ($tan_record[2] != $sender || strcmp($tan_record[4],"V")) {
+      $return->value = false;
+      $return->msg = "Invalid TAN";
+      return $return;
     }
   }
   $action = insertTransaction($sender,$recipient,$amount,$tan_record[0]);
   if (!$action) {
-    $res->value = false;
-    $res->msg = "Transaction failed";
-    return $res;
+    $return->value = false;
+    $return->msg = "Transaction failed";
+    return $return;
   }
-  $res->value = true;
-  $res->msg = "Transaction successful";
-  return $res;
+  $return->value = true;
+  $return->msg = "Transaction successful";
+  return $return;
 }
 
 // approve / deny a transaction
 function approveTransaction($id, $approver, $decison) {
   $return  = returnValue();
+  if (!filter_var($id, FILTER_VALIDATE_INT) or $id < 1) {
+    $return->value = false;
+    $return->msg = "Invalid transaction id.";
+    return $return;
+  }
+  $user_record = selectUSer($id);
+  if (!$user_record || $user_record[1] != "E") {
+    $return->value = false;
+    $return->msg = "Invalid approver";
+    return $return;
+  }
+  $approve = updateTransactionApproval($id, $approver, $decison)
+  if (!$approve) {
+    $return->value = false;
+    $return->msg = "Transaction update failed";
+    return $return;
+  }
+  $return->value = true;
+  $return->msg = "Transaction update successful";
   return $return;
 }
 

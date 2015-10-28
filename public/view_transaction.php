@@ -3,20 +3,23 @@
 define('BANK_APP', TRUE);
 
 require_once "../app/user.php";
+require_once "../app/transaction.php";
 
 startSession();
 
-// get single user
-$id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : getAuthUser()->userid;
-$user = getSingleUser($id);
+// get single transaction
+if (isset($_GET['id'])) {
+  $id = $_GET['id'];
+  $transaction = getSingleTransaction($id);
+}
 
 // process form
 if (isset($_POST['approve']) || isset($_POST['deny'])) {
-  $id = $_POST['userid'];
+  $id = $_POST['transactionid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
 
-  $approval = approveRegistration($id, $approver, $decision);
+  $approval = approveTransaction($id, $approver, $decison);
 
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
@@ -24,13 +27,13 @@ if (isset($_POST['approve']) || isset($_POST['deny'])) {
 }
 
 // include header
-$pageTitle = "View User";
+$pageTitle = "View Transaction";
 include("header.php");
 
 ?>
 
-<?php if ($user): ?>
-<h3>View User</h3>
+<?php if (isset($transaction) && $transaction): ?>
+<h3>View Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
   <fieldset>
     <div class="pure-control-group">
@@ -74,7 +77,7 @@ include("header.php");
     </div>
 
     <div class="pure-controls">
-      <input type="hidden" name="userid" value="" />
+      <input type="hidden" name="transactionid" value="" />
       <button type="submit" name="approve" class="pure-button button-success">Approve</button>
       <button type="submit" name="deny" class="pure-button button-error">Deny</button>
     </div>

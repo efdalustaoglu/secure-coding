@@ -8,6 +8,7 @@ require_once "db.php";
 function getTransactions() {
   $transactions = selectTransactions();
   if (!$transactions) {
+    $return = returnValue();
     $return->value = false;
     $return->msg = "Transaction not found";
     return $return;
@@ -19,6 +20,7 @@ function getTransactions() {
 function getSingleTransaction($id) {
   $transaction = selectTransaction();
   if (!$transaction) {
+    $return = returnValue();
     $return->value = false;
     $return->msg = "Transaction not found";
     return $return;

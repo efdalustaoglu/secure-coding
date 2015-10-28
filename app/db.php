@@ -115,7 +115,7 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
   $firstname = escape($firstname, $connection);
   $lastname = escape($lastname, $connection);
 
-  $sql = "INSERT INTO users(USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
+  $sql = "INSERT INTO users (USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
   $sql.= "VALUES ('$userType', '$email', '$password', '$firstname', '$lastname', '$date')";
   return executeNonQuery($sql, $connection);
 }
@@ -133,54 +133,71 @@ function updateUserRegistration($id, $approver) {
 
 // select all transactions
 function selectTransactions() {
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $sql = "SELECT * FROM `transactions`";
+  return executeQuery($sql, $connection);
 }
 
 // select single transactions
 function selectTransaction($id) {
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $sql = "SELECT * FROM `transactions` WHERE ID = $id";
+  return executeQuery($sql, $connection);
 }
 
 // insert into transactions table
 function insertTransaction($sender, $recipient, $amount, $tan) {
-  openDb();
+  $connection = openDb();
+  $date = date('d.m.Y H:i');
 
-  closeDb();
+  if ($amount >= 10000) {
+  
+    $sql = "INSERT INTO transactions ( SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, TAN_ID, DATE_CREATED, APPROVED_BY)";
+    $sql.= "VALUES ('$sender', '$recipient', '$amount', '$tan', '$date', "0");";
+    return executeNonQuery($sql, $connection);
+
+  }else if ($amount < 10000 && $amount >= 0) {
+  
+    $sql = "INSERT INTO transactions ( SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED)";
+    $sql.= "VALUES ('$sender', '$recipient', '$amount', '$tan', '$date', "0", '$date');";
+    return executeNonQuery($sql, $connection);
+
+  }else{}
 }
 
 // update transaction approval
 function updateTransactionApproval($id, $approver, $decison) {
   // $decision = A / D / P. Approved, Denied, Pending
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $date = date('d.m.Y H:i');
+  $sql = "UPDATE transactions SET APPROVED_BY='$approver', DATE_APPROVED='$date', STATUS='$decision' WHERE id='$id' ";
+  return executeQuery($sql, $connection);
 }
 
 // insert new tans
 function insertTan($userAccount, $tan) {
   // default tan status is V - valid
-  openDb();
+  $connection = openDb();
+  $date = date('d.m.Y H:i');
 
-  closeDb();
+  $sql = "INSERT INTO tans ( TAN_NUMBER, CLIENT_ACCOUNT, DATE_CREATED)";
+  $sql.= "VALUES ('$tan', '$userAccount', '$date');";
+  return executeNonQuery($sql, $connection);
 }
 
 // update tan
 function updateTanStatus($tanId, $status) {
   // possible values = U / V. Used, Valid.
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $sql = "UPDATE tans SET STATUS='$status' WHERE ID='$tanId' ";
+  return executeQuery($sql, $connection);
 }
 
 // select tan
 function getSingleTan($tan) {
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $sql = "SELECT * FROM `tans` WHERE ID = $id";
+  return executeQuery($sql, $connection);
 }
 
 ?>

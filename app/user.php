@@ -79,17 +79,25 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
 
 // gets all users in the databse
 function getUsers() {
-  
+  return selectUsers();
 }
 
 // gets a single user from the db
 function getSingleUser($id) {
-  selectUser($id);
+  return selectUser($id);
 }
 
 // approves a user registration
 function approveRegistration($id, $approver, $decision) {
   $return  = returnValue();
+  $approval = updateUserRegistration($id, $approver, $decision); //why is $decision not included in updateUserRegistration()?
+  if (!approval) {
+    $return->value = false;
+    $return->msg = "Approval failed";
+    return $return;
+  }
+  $return->value = true;
+  $return->msg = "Approval successful";
   return $return;
 }
 

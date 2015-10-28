@@ -7,24 +7,12 @@ require_once "db.php";
 // gets all transactions
 function getTransactions() {
   $transactions = selectTransactions();
-  if (!$transactions) {
-    $return = returnValue();
-    $return->value = false;
-    $return->msg = "Transaction not found";
-    return $return;
-  }
   return $transactions;
 }
 
 // gets a single transaction
 function getSingleTransaction($id) {
   $transaction = selectTransaction();
-  if (!$transaction) {
-    $return = returnValue();
-    $return->value = false;
-    $return->msg = "Transaction not found";
-    return $return;
-  }
   return $transaction;
 }
 

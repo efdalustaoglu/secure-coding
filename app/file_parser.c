@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <math.h>
 #include <string.h>
+#include <ctype.h>
 
 #define RETURN_SUCCESS 0
 #define PARAMETER_ERROR -1

@@ -19,7 +19,7 @@ include("header.php");
 <p>
   <a class="pure-button pure-button-primary" href="create_transaction.php">New Transaction</a>
 </p>
-<table class="pure-table">
+<table class="pure-table pure-table-bordered">
   <thead>
     <tr>
       <th>#</th>

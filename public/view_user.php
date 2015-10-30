@@ -11,12 +11,10 @@ $id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : ge
 $user = getSingleUser($id);
 
 // process form
-if (isset($_POST['approve']) || isset($_POST['deny'])) {
+if (isset($_POST['approve'])) {
   $id = $_POST['userid'];
-  $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
-
-  $approval = approveRegistration($id, $approver, $decision);
+  $approval = approveRegistration($id, $approver);
 
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
@@ -35,49 +33,45 @@ include("header.php");
   <fieldset>
     <div class="pure-control-group">
       <label>Created On</label>
-      <span>Hey</span>
+      <span><?php echo $user->DATE_CREATED; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Sender</label>
-      <span>Hey</span>
+      <label>First name</label>
+      <span><?php echo $user->FIRST_NAME; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Recipient</label>
-      <span>Hey</span>
+      <label>Last name</label>
+      <span><?php echo $user->LAST_NAME; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Amount</label>
-      <span>Hey</span>
+      <label>Email</label>
+      <span><?php echo $user->EMAIL; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Status</label>
-      <span>Hey</span>
-    </div>
-
-    <div class="pure-control-group">
-      <label>Tan</label>
-      <span>Hey</span>
+      <label>User type</label>
+      <span><?php echo $user->USER_TYPE === 'C' ? "Client" : "Employee"; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Approved By</label>
-      <span>Hey</span>
+      <span><?php echo $user->APPROVED_BY; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Approved On</label>
-      <span>Hey</span>
+      <span><?php echo $user->DATE_APPROVED; ?></span>
     </div>
 
+    <?php if ($user->DATE_APPROVED === null): ?>
     <div class="pure-controls">
-      <input type="hidden" name="userid" value="" />
+      <input type="hidden" name="userid" value="<?php echo $id; ?>" />
       <button type="submit" name="approve" class="pure-button button-success">Approve</button>
-      <button type="submit" name="deny" class="pure-button button-error">Deny</button>
     </div>
+    <?php endif; ?>
   </fieldset>
 </form>
 

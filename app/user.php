@@ -139,18 +139,70 @@ function getUsers() {
 
 // gets a single user from the db
 function getSingleUser($id) {
-  selectUser($id);
+  return selectUser($id);
 }
 
 // approves a user registration
-function approveRegistration($id, $approver, $decision) {
-  $return  = returnValue();
+function approveRegistration($id, $approver) {
+  $return = returnValue();
+  $update = updateUserRegistration($id, $approver);
+
+  if (!$update) {
+    $return->value = false;
+    $return->msg = "DB update operation failed";
+    return $return;
+  }
+
+  // create user's account number
+  $accountNumber = generateAccountNumber($id);
+  if (!$accountNumber) {
+    $return->value = false;
+    $return->msg = $accountNumber->msg;
+    return $return;
+  }
+
+
+  // send email to user with 100 tans
+  $tans = createTans($id);
+  if (!$tans) {
+    $return->value = false;
+    $return->msg = $tans->msg;
+    return $return;
+  }
+
+  $return->value = true;
+  $return->msg = "User approval successful";
   return $return;
 }
 
 // create 100 tans
-function createTans($userAccount) {
+function createTans($id) {
+  $tansUnique = false;  
 
+  while ($tansUnique === false) {
+    // get tans from C program
+    $tans = ""; 
+
+    $temp = true;
+    foreach($tans as $tan) {
+      if (!checkTanUniqueness($tan)) {
+        $temp = false;
+        break;
+      }
+    }
+
+    if ($temp) {
+      $tansUnique = true;
+    }
+  }
+
+  // get user's account number
+  $accNumber = getAccountById($id);
+
+  // insert tans into db
+  $insert = 
+  
+  // send email to user with tans
 }
 
 // update tan status
@@ -172,7 +224,7 @@ function sendEmail() {
 
 }
 
-function generateAccoutnNumber() {
+function generateAccountNumber($id) {
 
 }
 

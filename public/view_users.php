@@ -15,7 +15,7 @@ include("header.php");
 ?>
 
 <h3>View Users</h3>
-<table class="pure-table">
+<table class="pure-table pure-table-bordered">
   <thead>
     <tr>
       <th>#</th>

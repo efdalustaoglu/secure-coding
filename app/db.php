@@ -91,7 +91,7 @@ function selectUsers() {
 function selectUser($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "SELECT * FROM users WHERE ID = $id";
+  $sql = "SELECT * FROM users_view WHERE ID = $id";
   return executeQuery($sql, $connection, true);
 }
 
@@ -128,7 +128,7 @@ function updateUserRegistration($id, $approver) {
   $date = date('Y-m-d');
 
   $sql = "UPDATE users SET APPROVED_BY = $approver, DATE_APPROVED = '$date' WHERE ID = $id";
-  return executeQuery($sql, $connection);
+  return executeNonQuery($sql, $connection);
 }
 
 // select all transactions
@@ -161,26 +161,30 @@ function updateTransactionApproval($id, $approver, $decison) {
 }
 
 // insert new tans
-function insertTan($userAccount, $tan) {
+function insertTan($tan, $client) {
   // default tan status is V - valid
-  openDb();
+  $connection = openDb();
+  $date = date('Y-m-d');
 
-  closeDb();
+  $sql = "INSERT INTO tans(TAN_NUMBER, CLIENT_ACCOUNT, DATE_CREATED, STATUS) ";
+  $sql.= "VALUES ('$tan', $client, '$date', 'V')";
+  return executeNonQuery($sql, $connection);
 }
 
 // update tan
-function updateTanStatus($tanId, $status) {
+function updateTanStatus($tanId) {
   // possible values = U / V. Used, Valid.
-  openDb();
+  $connection = openDb();
 
-  closeDb();
+  $sql = "UPDATE tans SET STATUS = 'U' WHERE ID = $tanId";
+  return executeNonQuery($sql, $connection);
 }
 
 // select tan
-function getSingleTan($tan) {
-  openDb();
-
-  closeDb();
+function getSingleTanByTan($tan) {
+  $connection = openDb();
+  $sql = "SELECT * FROM tans WHERE TAN_NUMBER = $tan";
+  return executeQuery($sql, $connection, true);
 }
 
 ?>

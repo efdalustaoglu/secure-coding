@@ -13,15 +13,11 @@ if (isset($_POST['submit'])) {
   $confirmPassword = $_POST['confirm_password'];
   $usertype = $_POST['usertype'];
   
-  $register = createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname);
+  $register = createUser($usertype, $email, $password, $confirmPassword, $firstname, $lastname);
 
   if (!empty($register->msg)) {
     $showMsg = $register->msg;
   }
-
-  // clear POST data
-  $_POST = array();
-
 }
 
 // include header

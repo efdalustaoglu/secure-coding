@@ -29,16 +29,18 @@ include("header.php");
     </tr>
   </thead>
   <tbody>
+  <?php foreach($users as $user): ?>
     <tr>
-      <td>1</td>
-      <td>John Doe</td>
-      <td>efe@gmail.com</td>
-      <td>Client</td>
-      <td>19000489083</td>
-      <td>Betty White</td>
-      <td>23.09.2014</td>
-      <td><a href="">Open</a></td>
+      <td><?php echo $user->ID; ?></td>
+      <td><?php echo $user->FIRST_NAME.' '.$user->LAST_NAME; ?></td>
+      <td><?php echo $user->EMAIL; ?></td>
+      <td><?php echo $user->USER_TYPE === "C" ? "Client" : "Employee"; ?></td>
+      <td><?php echo empty($user->ACCOUNT_NUMBER) ? '' : $user->ACCOUNT_NUMBER; ?></td>
+      <td><?php echo $user->APPROVED_BY; ?></td>
+      <td><?php echo $user->DATE_APPROVED; ?></td>
+      <td><a href="view_user.php?id=<?php echo $user->ID; ?>">Open</a></td>
     </tr>
+  <?php endforeach; ?>
   </tbody>
 </table>
 

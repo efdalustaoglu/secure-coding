@@ -6,6 +6,7 @@ require_once "db.php";
 
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
+  startSession();
   $_SESSION['userid'] = $userid;
   $_SESSION['firstname'] = $firstname;
   $_SESSION['lastname'] = $lastname;
@@ -15,12 +16,14 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 
 // start session
 function startSession() {
-  session_start();
+  if (session_id() === '') {
+    session_start();
+  }
 }
 
 // check if user is authenticated
 function isUserAuth() {
-  return !empty($_SESSION['email']);
+  return !empty($_SESSION['userid']);
 }
 
 // get session properties of authorized user
@@ -48,16 +51,17 @@ function login($email, $password) {
   $password = md5($password);
   $login = selectByEmailAndPassword($email, $password);
 
-  if (count($login) !== 1) {
+  if (!$login) {
     $return->value = false;
     $return->msg = "Invalid login credentials";
     return $return;
   }
 
   // save user to session
-  $firstname = $login['firstname'];
-  $lastname = $login['lastname'];
-  $userid = $login['userid'];
+  $firstname = $login->FIRST_NAME;
+  $lastname = $login->LAST_NAME;
+  $userid = $login->ID;
+  $usertype = $login->USER_TYPE;
   saveSession($email, $usertype, $firstname, $lastname, $userid);
 
   $return->value = true;
@@ -74,6 +78,47 @@ function logout () {
 // creates a user: employee or client
 function createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname) {
   $return  = returnValue();
+
+  // check for empty fields
+  if (empty($firstname) || empty($lastname)) {
+    $return->value = false;
+    $return->msg = "Firstname or lastname is empty";
+    return $return;
+  }
+
+  // validate email format
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $return->value = false;
+    $return->msg = "Invalid email format";
+    return $return;
+  }
+
+  // check if usertype is among valid values
+  if ($userType !== "E" && $userType !== "C") {
+    $return->value = false;
+    $return->msg = "Invalid user type";
+    return $return;
+  }
+
+  // check if passwords match
+  if ($password !== $confirmPassword) {
+    $return->value = false;
+    $return->msg = "Passwords do not match";
+    return $return;
+  }
+
+  $password = md5($password);
+  $insert = insertUser($userType, $email, $password, $firstname, $lastname);
+
+  // check if db operation failed
+  if (!$insert) {
+    $return->value = false;
+    $return->msg = "DB insert operation failed";
+    return $return;
+  }
+
+  $return->value = true;
+  $return->msg = "Registration successful";
   return $return;
 }
 

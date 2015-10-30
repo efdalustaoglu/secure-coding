@@ -21,9 +21,6 @@ if (isset($_POST['approve']) || isset($_POST['deny'])) {
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
   }
-
-  // clear POST data
-  $_POST = array();
 }
 
 // include header

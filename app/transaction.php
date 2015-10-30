@@ -16,6 +16,7 @@ function getSingleTransaction($id) {
   return $transaction;
 }
 
+
 // creates a transaction
 function createTransaction($sender, $recipient, $amount, $tan) {
   //TODO: check if parameters are valid

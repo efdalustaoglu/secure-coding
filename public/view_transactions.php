@@ -16,6 +16,9 @@ include("header.php");
 ?>
 
 <h3>View Transactions</h3>
+<p>
+  <a class="pure-button pure-button-primary" href="create_transaction.php">New Transaction</a>
+</p>
 <table class="pure-table">
   <thead>
     <tr>

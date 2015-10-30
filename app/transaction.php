@@ -35,9 +35,13 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     $return->msg = "Bad Request: Recipient account must be different from sender.";
     return $return;
   }
-  if (!filter_var($amount, FILTER_VALIDATE_INT) or $amount < 1) {
+  if (is_string($amount) && !ctype_digit($amount) || !filter_var($amount, FILTER_VALIDATE_INT)) {
     $return->value = false;
-    $return->msg = "Bad Request: Amount must be a positive integer.";
+    $return->msg = "Bad Request: Amount must be an integer.";
+    return $return;
+  } else if ($amount < 1) {
+    $return->value = false;
+    $return->msg = "Bad Request: Amount must be positive.";
     return $return;
   }
   if (empty($tan) or preg_match('/[^A-Za-z0-9]/', $tan)) {

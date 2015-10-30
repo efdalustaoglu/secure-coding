@@ -103,7 +103,7 @@ CREATE TABLE `users` (
   `APPROVED_BY` int(11) DEFAULT NULL,
   PRIMARY KEY (`ID`),
   UNIQUE KEY `EMAIL_UNIQUE` (`EMAIL`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=latin1;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -151,7 +151,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `users_view` AS select `u`.`ID` AS `ID`,`u`.`USER_TYPE` AS `USER_TYPE`,`u`.`EMAIL` AS `EMAIL`,`u`.`FIRST_NAME` AS `FIRST_NAME`,`u`.`LAST_NAME` AS `LAST_NAME`,`u`.`DATE_CREATED` AS `DATE_CREATED`,`u`.`DATE_APPROVED` AS `DATE_APPROVED`,coalesce((select ((`users`.`FIRST_NAME` + ' ') + `users`.`LAST_NAME`) from `users` where (`users`.`ID` = `u`.`APPROVED_BY`)),'System') AS `APPROVED_BY`,`a`.`ID` AS `ACCOUNT_ID`,`a`.`ACCOUNT_NUMBER` AS `ACCOUNT_NUMBER`,`a`.`BALANCE` AS `BALANCE` from (`users` `u` left join `accounts` `a` on((`u`.`ID` = `a`.`USER`))) */;
+/*!50001 VIEW `users_view` AS select `u`.`ID` AS `ID`,`u`.`USER_TYPE` AS `USER_TYPE`,`u`.`EMAIL` AS `EMAIL`,`u`.`FIRST_NAME` AS `FIRST_NAME`,`u`.`LAST_NAME` AS `LAST_NAME`,`u`.`DATE_CREATED` AS `DATE_CREATED`,`u`.`DATE_APPROVED` AS `DATE_APPROVED`,(select concat(`users`.`FIRST_NAME`,' ',`users`.`LAST_NAME`) from `users` where (`users`.`ID` = `u`.`APPROVED_BY`)) AS `APPROVED_BY`,`a`.`ID` AS `ACCOUNT_ID`,`a`.`ACCOUNT_NUMBER` AS `ACCOUNT_NUMBER`,`a`.`BALANCE` AS `BALANCE` from (`users` `u` left join `accounts` `a` on((`u`.`ID` = `a`.`USER`))) where (`u`.`USER_TYPE` <> 'S') */;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -165,4 +165,4 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-10-26  3:34:51
+-- Dump completed on 2015-10-30 19:01:25

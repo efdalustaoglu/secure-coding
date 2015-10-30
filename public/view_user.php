@@ -11,10 +11,11 @@ $id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : ge
 $user = getSingleUser($id);
 
 // process form
-if (isset($_POST['approve'])) {
+if (isset($_POST['approve']) || isset($_POST['reject'])) {
   $id = $_POST['userid'];
+  $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
-  $approval = approveRegistration($id, $approver);
+  $approval = approveRegistration($id, $approver, $decision);
 
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
@@ -70,6 +71,7 @@ include("header.php");
     <div class="pure-controls">
       <input type="hidden" name="userid" value="<?php echo $id; ?>" />
       <button type="submit" name="approve" class="pure-button button-success">Approve</button>
+      <button type="submit" name="reject" class="pure-button button-error">Reject</button>
     </div>
     <?php endif; ?>
   </fieldset>

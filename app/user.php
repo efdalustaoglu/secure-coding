@@ -143,9 +143,9 @@ function getSingleUser($id) {
 }
 
 // approves a user registration
-function approveRegistration($id, $approver) {
+function approveRegistration($id, $approver, $decision) {
   $return = returnValue();
-  $update = updateUserRegistration($id, $approver);
+  $update = updateUserRegistration($id, $approver, $decision);
 
   if (!$update) {
     $return->value = false;
@@ -153,14 +153,20 @@ function approveRegistration($id, $approver) {
     return $return;
   }
 
+  if (!$decision) {
+    $return->value = true;
+    $return->msg = "User registration denied successfully";
+    return $return;
+  }
+
   // create user's account number
   $accountNumber = generateAccountNumber($id);
+  
   if (!$accountNumber) {
     $return->value = false;
     $return->msg = $accountNumber->msg;
     return $return;
   }
-
 
   // send email to user with 100 tans
   $tans = createTans($id);
@@ -225,7 +231,7 @@ function sendEmail() {
 }
 
 function generateAccountNumber($id) {
-
+  return $id + 1000000000;
 }
 
 

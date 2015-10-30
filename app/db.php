@@ -121,13 +121,25 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
 }
 
 // update user registration
-function updateUserRegistration($id, $approver) {
+function updateUserRegistration($id, $approver, $decision) {
   $connection = openDb();
   $id = (int) $id;
   $approver = (int) $approver;
   $date = date('Y-m-d');
 
+  if ($decision === false) {
+    return deleteUserRegistration($id);
+  }
+
   $sql = "UPDATE users SET APPROVED_BY = $approver, DATE_APPROVED = '$date' WHERE ID = $id";
+  return executeNonQuery($sql, $connection);
+}
+
+// delete a rejected user registration
+function deleteUserRegistration($id) {
+  $connection = openDb();
+  $id = (int) $id;
+  $sql = "DELETE FROM users WHERE ID = ".$id;
   return executeNonQuery($sql, $connection);
 }
 
@@ -185,6 +197,16 @@ function getSingleTanByTan($tan) {
   $connection = openDb();
   $sql = "SELECT * FROM tans WHERE TAN_NUMBER = $tan";
   return executeQuery($sql, $connection, true);
+}
+
+// insert user account
+function insertAccount($userid, $accountNumber) {
+  $connection = openDb();
+  $date = date('Y-m-d');
+
+  $sql = "INSERT INTO accounts(USER, ACCOUNT_NUMBER, DATE_CREATED) ";
+  $sql.= "VALUES ($userid, $accountNumber, '$date')";
+  return executeNonQuery($sql, $connection);
 }
 
 ?>

@@ -200,4 +200,12 @@ function getSingleTan($tan) {
   return executeQuery($sql, $connection);
 }
 
+// select tans by giving userID
+function getTansByUserId($id) {
+  
+  $connection = openDb();
+  $sql = "SELECT * FROM `tans` WHERE CLIENT_ACCOUNT = $id";
+  return executeQuery($sql, $connection);
+}
+
 ?>

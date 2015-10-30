@@ -174,4 +174,107 @@ function getAccountByAccountNumber($number) {
 }
 
 
+/*
+  Generates the PDF file that is given by user ID, and returns the created PDF document
+*/
+function generatePDF($userId){
+
+  require('FPDF/fpdf.php');
+
+  $pdf = new FPDF();//create the instance
+  $pdf->AddPage();
+  $pdf->SetFont('Helvetica','B',18);//set the font style
+
+  $pdf->Cell(75);//start 7.5 cm from right
+  $pdf->Cell(0,10,"Tan Numbers");//name the title
+  $pdf->SetFont('Helvetica','',15);
+
+  $pdf->Ln(15);//linebreak
+
+  $tans = getTansByUserId($userId);
+
+  $i = 0;
+  foreach ($tans as $tan) {
+    
+    $pdf->SetFont('Helvetica','B',15);
+    $pdf->Cell(15, 10, ($i+1) . " - )");
+    $pdf->SetFont('Helvetica','',15);
+    $pdf->Cell(0,10," $tan->TAN_NUMBER");
+    $pdf->Ln(10);
+    $i++;
+  }
+
+  //$pdf->Output();//print the pdf file to the screen
+  
+  $doc = $pdf->Output('', 'S');//Save the pdf file 
+  return $doc;
+}
+
+function sendEmail($userId){
+
+  require_once('PHPMailer/class.phpmailer.php');
+  $doc = generatePDF($userId);
+
+  $mail             = new PHPMailer(); 
+  $body="
+        Requested Tan Numbers are attached to the e-mail..
+  ";
+  $mail->CharSet = 'UTF-8';
+
+  $mail->SetFrom('Admin@secoding.com', 'SecureCodingTeam6');//Set the name as you like
+  $mail->SMTPAuth = true;
+  $mail->Host = "smtp.gmail.com"; // SMTP server
+  $mail->SMTPSecure = "ssl";
+  $mail->Username = "secoding6@gmail.com"; //account which you want to send mail from
+  $mail->Password = "efenikosmaltefdal"; //this is account's password
+  $mail->Port = "465";
+  $mail->isSMTP();  // telling the class to use SMTP
+
+  $user = getSingleUser($userId);
+
+  $mail->AddAddress("$user->EMAIL", "$user->FIRST_NAME $user->LAST_NAME");
+  $mail->Subject    = "SecureCodingTeam6";
+  $mail->MsgHTML($body);
+  $mail->AddStringAttachment($doc, 'doc.pdf', 'base64', 'application/pdf');
+}
+
+function sendEmail2($userId){
+
+  require_once('PHPMailer/class.phpmailer.php');
+  $doc = generatePDF($userId);
+
+  $mail             = new PHPMailer(); 
+  $body = "
+      Tan Numbers
+
+  ";
+  $tans = getTansByUserId($userId);
+
+    $i = 0;
+    foreach ($tans as $tan) {
+    
+      $body .= ($i+1)." - ) $tan->TAN_NUMBER";
+    $body .= "<br />";
+    $i++;
+    }
+
+  $mail->CharSet = 'UTF-8';
+
+  $mail->SetFrom('Admin@secoding.com', 'SecureCodingTeam6');//Set the name as you like
+  $mail->SMTPAuth = true;
+  $mail->Host = "smtp.gmail.com"; // SMTP server
+  $mail->SMTPSecure = "ssl";
+  $mail->Username = "secoding6@gmail.com"; //account which you want to send mail from
+  $mail->Password = "efenikosmaltefdal"; //this is account's password
+  $mail->Port = "465";
+  $mail->isSMTP();  // telling the class to use SMTP
+
+  $user = getSingleUser($userId);
+
+  $mail->AddAddress("$user->EMAIL", "$user->FIRST_NAME $user->LAST_NAME");
+  $mail->Subject    = "SecureCodingTeam6";
+  $mail->MsgHTML($body);
+}
+
+
 ?>

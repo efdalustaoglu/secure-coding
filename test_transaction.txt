@@ -1,0 +1,6 @@
+Test file demonstrating the format of a transaction file
+
+SENDER_ACCOUNT:		1234567890
+RECIPIENT_ACCOUNT:	98965
+TAN:			abcdefghijklmno
+AMOUNT:			123.45

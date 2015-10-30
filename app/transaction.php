@@ -55,7 +55,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     $return->value = false;
     $return->msg = "Not Found: Sender account";
     return $return;
-  } else if ($sender_account[3] < $amount) {
+  } else if ($sender_account->BALANCE < $amount) {
       $return->value = false;
       $return->msg = "Bad Request: Amount to be transferred greater than balance";
       return $return;
@@ -72,7 +72,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     $return->msg = "Invalid TAN";
     return $return;
   } else {
-    if ($tan_record[2] != $sender || strcmp($tan_record[4],"V")) {
+    if ($tan_record->CLIENT_ACCOUNT != $sender || strcmp($tan_record[4],"V")) {
       $return->value = false;
       $return->msg = "Invalid TAN";
       return $return;
@@ -98,12 +98,12 @@ function approveTransaction($id, $approver, $decison) {
     return $return;
   }
   $user_record = selectUSer($id);
-  if (!$user_record || $user_record[1] != "E") {
+  if (!$user_record || $user_record->USER_TYPE != "E") {
     $return->value = false;
     $return->msg = "Invalid approver";
     return $return;
   }
-  $approve = updateTransactionApproval($id, $approver, $decison)
+  $approve = updateTransactionApproval($id, $approver, $decison);
   if (!$approve) {
     $return->value = false;
     $return->msg = "Transaction update failed";
@@ -120,3 +120,4 @@ function parseTransactionFile($path, $sender) {
 }
 
 ?>
+

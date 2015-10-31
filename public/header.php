@@ -68,7 +68,8 @@ require_once "../app/user.php";
             <a href="<?php echo 'view_transactions.php'; ?>" class="pure-menu-link">Transaction</a>
           </li>
           <li class="pure-menu-item">
-            <a href="<?php echo 'view_users.php'; ?>" class="pure-menu-link">User</a>
+            <?php $userLink = (getAuthUser()->usertype === 'E') ? 'view_users.php' : 'view_user.php?id='.getAuthUser()->userid; ?>
+            <a href="<?php echo $userLink; ?>" class="pure-menu-link">User</a>
           </li>
         </ul>
         <ul class="pure-menu-list pull-right">

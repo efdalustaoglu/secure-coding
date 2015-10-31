@@ -72,7 +72,7 @@ include("header.php");
       <span><?php echo $user->DATE_APPROVED; ?></span>
     </div>
 
-    <?php if ($user->DATE_APPROVED === null): ?>
+    <?php if ($user->DATE_APPROVED === null && getAuthUser()->usertype === 'E'): ?>
     <div class="pure-controls">
       <input type="hidden" name="userid" value="<?php echo $id; ?>" />
       <button type="submit" name="approve" class="pure-button button-success">Approve</button>

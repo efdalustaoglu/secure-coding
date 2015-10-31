@@ -23,8 +23,6 @@ if (isset($_POST['submit'])) {
 $pageTitle = "Login";
 include("header.php");
 
-sendTanEmail(7, 1);
-
 ?>
 
 <h3>Login</h3>

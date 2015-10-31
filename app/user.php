@@ -164,7 +164,7 @@ function approveRegistration($id, $approver, $decision) {
   
   if (!$accountNumber) {
     $return->value = false;
-    $return->msg = $accountNumber->msg;
+    $return->msg = "Error updating user account number";
     return $return;
   }
 
@@ -231,7 +231,8 @@ function sendEmail() {
 }
 
 function generateAccountNumber($id) {
-  return $id + 1000000000;
+  $accountNumber = $id + 1000000000;
+  return insertAccount($id, $accountNumber);
 }
 
 

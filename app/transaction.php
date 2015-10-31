@@ -26,6 +26,24 @@ function approveTransaction($id, $approver, $decison) {
   return $return;
 }
 
+// upload transaction file
+function uploadTransactionFile() {
+  $return = returnValue();
+  $filename = basename($_FILES["file"]["name"]);
+  $target_dir = "uploads/";
+  $target_file = $target_dir . $filename;
+
+  if (!move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
+    $return->value = false;
+    $return->msg = "Upload failed";
+    return $return;
+  }
+
+  $return->value = $filename;
+  $return->msg = "Upload successful";
+  return $return;
+}
+
 // parse transaction file
 function parseTransactionFile($path, $sender) {
 

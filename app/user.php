@@ -161,7 +161,6 @@ function approveRegistration($id, $approver, $decision) {
 
   // create user's account number
   $accountNumber = generateAccountNumber($id);
-  
   if (!$accountNumber) {
     $return->value = false;
     $return->msg = "Error updating user account number";
@@ -170,7 +169,7 @@ function approveRegistration($id, $approver, $decision) {
 
   // send email to user with 100 tans
   $tans = createTans($id);
-  if (!$tans) {
+  if (!$tans->value) {
     $return->value = false;
     $return->msg = $tans->msg;
     return $return;
@@ -181,58 +180,149 @@ function approveRegistration($id, $approver, $decision) {
   return $return;
 }
 
-// create 100 tans
+// create user's tans
 function createTans($id) {
-  $tansUnique = false;  
+  $return = returnValue();
+  // get user's account number
+  $accountId = getAccountByUserId($id)->ID;
 
-  while ($tansUnique === false) {
-    // get tans from C program
-    $tans = ""; 
+  // generate 100 tans
+  for ($i = 0; $i < 100; $i++) {
+    $tanUnique = false; 
 
-    $temp = true;
-    foreach($tans as $tan) {
-      if (!checkTanUniqueness($tan)) {
-        $temp = false;
-        break;
+    while(!$tanUnique) {
+      $tan = generateTan();
+
+      // check if tan is unique
+      if (checkTanUniqueness($tan)) {
+        
+        // save tan if it is unique
+        if (insertTan($tan, $accountId)) {
+          $tanUnique = true;
+        } else {
+          $return->value = false;
+          $return->msg = "Error inserting tans to DB";
+          return $return;
+        }
       }
     }
-
-    if ($temp) {
-      $tansUnique = true;
-    }
   }
-
-  // get user's account number
-  $accNumber = getAccountById($id);
-
-  // insert tans into db
-  $insert = 
   
   // send email to user with tans
+  if (!sendTanEmail($id, $accountId)) {
+    $return->value = false;
+    $return->msg = "Error sending tan email";
+    return $return;
+  }
+
+  $return->value = true;
+  $return->msg = "Tan creation process successful";
+  return $return;
 }
 
-// update tan status
+function generateTan() {
+  $characters = '0123456789ABCDEFGHIJKLMNOPRSTUVWXYZ';
+  $randomString = '';
+  for ($i = 0; $i < 15; $i++) {
+    $randomString .= $characters[rand(0, strlen($characters) - 1)];
+  }
+  return $randomString;
+}
+
+
+// check tan number for uniqueness
 function checkTanUniqueness($tan) {
-  
+  return (selectTanByTan($tan) === null) ? true : false;
 }
 
 // get account data for a user
-function getAccountById($id) {
-
+function getAccountByUserId($id) {
+  return selectAccountByUserId($id);
 }
 
 // get account data for a specific account number
 function getAccountByAccountNumber($number) {
-
+  return selectAccountByNumber($number);
 }
 
-function sendEmail() {
-
-}
-
+// generate a user's account number
 function generateAccountNumber($id) {
+  $account = selectAccountByUserId($id);
+  if ($account) {
+    return $account->ACCOUNT_NUMBER;
+  }
+
   $accountNumber = $id + 1000000000;
   return insertAccount($id, $accountNumber);
+}
+
+function sendTanEmail($userId, $accountId) {
+  $tans = selectTansByUserId($accountId);
+  $user = selectUser($userId);
+  $email = $user->EMAIL;
+  $name = $user->FIRST_NAME . " " . $user->LAST_NAME;
+
+  $subject = "Tan Numbers - ".$name;
+  $body = "";
+
+  for ($i = 0; $i < count($tans); $i++) {
+    $body .= ($i + 1).". ".$tans[$i]->TAN_NUMBER."<br/>" ;
+  }
+
+  return sendEmail($email, $name, $subject, $body);
+}
+
+function sendEmail($email, $name, $subject, $body) {
+  require_once('PHPMailer/class.phpmailer.php');
+  $mail = new PHPMailer();
+  $mail->CharSet = 'UTF-8';
+  $mail->SetFrom('Admin@secoding.com', 'SecureCodingTeam6');
+  $mail->SMTPAuth = true;
+  $mail->Host = "smtp.gmail.com";
+  $mail->SMTPSecure = "ssl";
+  $mail->Username = "secoding6@gmail.com";
+  $mail->Password = "efenikosmaltefdal"; 
+  $mail->Port = "465";
+  $mail->isSMTP();
+  $mail->AddAddress($email, $name);
+  $mail->Subject = $subject;
+  $mail->MsgHTML($body);
+
+  if (!$mail->send()) {
+    return false;
+  }
+
+  return true;
+}
+
+// generate PDF file
+function generatePDF($userId) {
+  require('FPDF/fpdf.php');
+  $pdf = new FPDF(); //create the instance
+  $pdf->AddPage();
+  $pdf->SetFont('Helvetica','B',18);//set the font style
+  $pdf->Cell(75);//start 7.5 cm from right
+  $pdf->Cell(0,10,"Tan Numbers");//name the title
+  $pdf->SetFont('Helvetica','',15);
+
+  $pdf->Ln(15);//linebreak
+
+  $tans = getTansByUserId($userId);
+
+  $i = 0;
+  foreach ($tans as $tan) {
+    $pdf->SetFont('Helvetica','B',15);
+    $pdf->Cell(15, 10, ($i+1) . " - )");
+    $pdf->SetFont('Helvetica','',15);
+    $pdf->Cell(0,10," $tan->TAN_NUMBER");
+    $pdf->Ln(10);
+    $i++;
+  }
+
+  //$pdf->Output();//print the pdf file to the screen
+  
+  $doc = $pdf->Output('', 'S'); //Save the pdf file 
+  return $doc;
 }
 
 

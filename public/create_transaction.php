@@ -25,8 +25,20 @@ if (isset($_POST['submit'])) {
 }
 
 // process file
-if (isset($_POST['file'])) {
+if (isset($_POST['upload'])) {
+  $upload = uploadTransactionFile();
 
+  if ($upload->value) {
+    // execute C program
+    $program = realpath("../app/file_parser");
+    $argument = realpath("./uploads/".$upload->value);
+    $command = $program." ".$argument;
+    $output = shell_exec($command);
+
+    // parse output to determine success or failure
+  } else {
+    $showMsg = $upload->msg;
+  }
 }
 
 // include header
@@ -67,7 +79,7 @@ include("header.php");
     </div>
 
     <div class="pure-controls">
-      <button type="submit" name="submit" class="pure-button pure-button-primary">Submit</button>
+      <button type="submit" name="upload" class="pure-button pure-button-primary">Submit</button>
     </div>
   </fieldset>
 </form>

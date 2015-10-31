@@ -6,10 +6,6 @@ require_once "../app/user.php";
 
 startSession(true);
 
-// get single user
-$id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : getAuthUser()->userid;
-$user = getSingleUser($id);
-
 // process form
 if (isset($_POST['approve']) || isset($_POST['reject'])) {
   $id = $_POST['userid'];
@@ -20,6 +16,15 @@ if (isset($_POST['approve']) || isset($_POST['reject'])) {
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
   }
+}
+
+// get single user
+$id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : getAuthUser()->userid;
+$user = getSingleUser($id);
+
+// if this user is invalid, redirect to view users page
+if (!$user) {
+  header("Location: "."view_users.php");
 }
 
 // include header

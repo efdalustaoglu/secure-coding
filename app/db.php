@@ -115,7 +115,7 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
   $firstname = escape($firstname, $connection);
   $lastname = escape($lastname, $connection);
 
-  $sql = "INSERT INTO users(USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
+  $sql = "INSERT INTO users (USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
   $sql.= "VALUES ('$userType', '$email', '$password', '$firstname', '$lastname', '$date')";
   return executeNonQuery($sql, $connection);
 }
@@ -145,31 +145,26 @@ function deleteUserRegistration($id) {
 
 // select all transactions
 function selectTransactions() {
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $sql = "SELECT * FROM transactions";
+  return executeQuery($sql, $connection);
 }
 
 // select single transactions
 function selectTransaction($id) {
-  openDb();
-
-  closeDb();
-}
-
-// insert into transactions table
-function insertTransaction($sender, $recipient, $amount, $tan) {
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $id = (int) $id;
+  $sql = "SELECT * FROM transactions WHERE ID = $id";
+  return executeQuery($sql, $connection, true);
 }
 
 // update transaction approval
 function updateTransactionApproval($id, $approver, $decison) {
   // $decision = A / D / P. Approved, Denied, Pending
-  openDb();
-
-  closeDb();
+  $connection = openDb();
+  $date = date('Y-m-d');
+  $sql = "UPDATE transactions SET APPROVED_BY = $approver, DATE_APPROVED = '$date', STATUS = '$decision' WHERE id = $id";
+  return executeQuery($sql, $connection);
 }
 
 // insert new tans
@@ -192,11 +187,25 @@ function updateTanStatus($tanId) {
   return executeNonQuery($sql, $connection);
 }
 
-// select tan
-function getSingleTanByTan($tan) {
+// select tan by tan
+function selectTanByTan($tan) {
   $connection = openDb();
-  $sql = "SELECT * FROM tans WHERE TAN_NUMBER = $tan";
+  $sql = "SELECT * FROM tans WHERE TAN_NUMBER = '$tan'";
   return executeQuery($sql, $connection, true);
+}
+
+// select tan by tan ID
+function selectSingleTan($tan) {
+  $connection = openDb();
+  $sql = "SELECT * FROM tans WHERE ID = $id";
+  return executeQuery($sql, $connection, true);
+}
+
+// select tans by user ID
+function selectTansByUserId($id) {
+  $connection = openDb();
+  $sql = "SELECT * FROM tans WHERE CLIENT_ACCOUNT = $id";
+  return executeQuery($sql, $connection);
 }
 
 // insert user account
@@ -207,6 +216,20 @@ function insertAccount($userid, $accountNumber) {
   $sql = "INSERT INTO accounts(USER, ACCOUNT_NUMBER, DATE_CREATED) ";
   $sql.= "VALUES ($userid, $accountNumber, '$date')";
   return executeNonQuery($sql, $connection);
+}
+
+// select account account by account number
+function selectAccountByNumber($accountNumber) {
+  $connection = openDb();
+  $sql = "SELECT * FROM accounts WHERE ACCOUNT_NUMBER = $accountNumber";
+  return executeQuery($sql, $connection, true);
+}
+
+// select account account by account id
+function selectAccountByUserId($id) {
+  $connection = openDb();
+  $sql = "SELECT * FROM accounts WHERE USER = $id";
+  return executeQuery($sql, $connection, true);
 }
 
 ?>

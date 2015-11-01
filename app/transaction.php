@@ -7,13 +7,37 @@ require_once "db.php";
 // gets all transactions
 function getTransactions() {
   $transactions = selectTransactions();
-  return $transactions;
+  foreach($transactions as $transaction) {
+    $returnSet[] = (object) array(
+      "ID" => $transaction->ID,
+      "SENDER_ACCOUNT" => getAccountByAccId($transaction->SENDER_ACCOUNT)->ACCOUNT_NUMBER,
+      "RECIPIENT_ACCOUNT" => getAccountByAccId($transaction->RECIPIENT_ACCOUNT)->ACCOUNT_NUMBER,
+      "AMOUNT" => $transaction->AMOUNT,
+      "STATUS" => $transaction->STATUS,
+      "TAN_ID" => getSingleTanById($transaction->TAN_ID)->TAN_NUMBER,
+      "APPROVED_BY" => $transaction->APPROVED_BY != 0 ? selectUser($transaction->APPROVED_BY)->LAST_NAME ." ". selectUser($transaction->APPROVED_BY)->FIRST_NAME : $transaction->APPROVED_BY,
+      "DATE_APPROVED" => $transaction->DATE_APPROVED,
+      "DATE_CREATED" => $transaction->DATE_CREATED
+    );
+  }
+  return $returnSet;
 }
 
 // gets a single transaction
 function getSingleTransaction($id) {
   $transaction = selectTransaction($id);
-  return $transaction;
+  $return = array(
+    "ID" => $transaction->ID,
+    "SENDER_ACCOUNT" => getAccountByAccId($transaction->SENDER_ACCOUNT)->ACCOUNT_NUMBER,
+    "RECIPIENT_ACCOUNT" => getAccountByAccId($transaction->RECIPIENT_ACCOUNT)->ACCOUNT_NUMBER,
+    "AMOUNT" => $transaction->AMOUNT,
+    "STATUS" => $transaction->STATUS,
+    "TAN_ID" => getSingleTanById($transaction->TAN_ID)->TAN_NUMBER,
+    "APPROVED_BY" => $transaction->APPROVED_BY != 0 ? selectUser($transaction->APPROVED_BY)->LAST_NAME ." ". selectUser($transaction->APPROVED_BY)->FIRST_NAME : $transaction->APPROVED_BY,
+    "DATE_APPROVED" => $transaction->DATE_APPROVED,
+    "DATE_CREATED" => $transaction->DATE_CREATED
+  );
+  return (object) $return;
 }
 
 function transferAmount($sender,$recipient,$amount) {

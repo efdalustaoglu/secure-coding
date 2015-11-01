@@ -51,7 +51,7 @@ function closeDb(&$connection) {
 function executeQuery($sql, &$connection, $findFirst = false) {
   $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
 
-  $resultSet = [];
+  $resultSet = array();
   while ($row = mysqli_fetch_assoc($result)) {
     $resultSet[] = (object) $row;
   }

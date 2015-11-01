@@ -8,7 +8,7 @@
    #include "my_global.h"
    #include "mysql.h"
 #else
-   #include <mysql.h>
+   #include <mysql/mysql.h>
 #endif
 
 // Definition of error codes returned by the program (excl. MySQL specific error codes)
@@ -45,7 +45,7 @@ typedef struct transaction_struct{
 // Global variables
 MYSQL *mysql = NULL;
 char *db_user = "root";
-char *db_password = "root";
+char *db_password = "samurai";
 char *db_name = "bank_db";
 
 

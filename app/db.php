@@ -28,7 +28,7 @@ function returnValue() {
 function openDb() {
   $host = "localhost";
   $username = "root";
-  $password = "";
+  $password = "f+,xkFJ2";
   $database = "bank_db";
 
   // create connection
@@ -79,6 +79,43 @@ function executeNonQuery($sql, &$connection) {
 function escape($value, &$connection) {
   return mysqli_real_escape_string($connection, $value);
 }
+
+//------------------>NIKOS {
+//Update account balance of the sender/recipient during a transaction
+function updateBalance($account, $new_balance) {
+  $connection = openDb();
+  $sql = "UPDATE accounts SET BALANCE = $new_balance WHERE ACCOUNT_NUMBER = $account";
+  return executeNonQuery($sql, $connection);
+}
+
+function getAccountByAccId($account_id) {
+  $connection = openDb();
+  $account_id = (int) $account_id;
+  $sql = "SELECT * FROM accounts WHERE ID = $account_id";
+  return executeQuery($sql, $connection, true);
+}
+
+function getAccountByAccNumber($account_number) {
+  $connection = openDb();
+  $account_number = (int) $account_number;
+  $sql = "SELECT * FROM accounts WHERE ACCOUNT_NUMBER = $account_number";
+  return executeQuery($sql, $connection, true);
+}
+
+function getAccountByUId($id) {
+  $connection = openDb();
+  $id = (int) $id;
+  $sql = "SELECT * FROM accounts WHERE CLIENT_USER = $id";
+  return executeQuery($sql, $connection, true);
+}
+
+// select tan by id
+function getSingleTanById($tan) {
+  $connection = openDb();
+  $sql = "SELECT * FROM `tans` WHERE ID = '$tan'";
+  return executeQuery($sql, $connection,true);
+}
+//<------------------} NIKOS
 
 // select all users
 function selectUsers() {
@@ -142,36 +179,39 @@ function selectTransactions() {
 function selectTransaction($id) {
   $connection = openDb();
   $sql = "SELECT * FROM `transactions` WHERE ID = $id";
-  return executeQuery($sql, $connection);
+  return executeQuery($sql, $connection, true); //needs true as third argument
 }
 
 // insert into transactions table
 function insertTransaction($sender, $recipient, $amount, $tan) {
   $connection = openDb();
-  $date = date('d.m.Y H:i');
+//  $date = date('d.m.Y H:i');
+  $date = date('Y.m.d');
 
   if ($amount >= 10000) {
   
     $sql = "INSERT INTO transactions ( SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, TAN_ID, DATE_CREATED, APPROVED_BY)";
-    $sql.= "VALUES ('$sender', '$recipient', '$amount', '$tan', '$date', "0");";
+    $sql.= "VALUES ('$sender', '$recipient', '$amount', '$tan', '$date', '0');"; //'0' not "0"
     return executeNonQuery($sql, $connection);
 
   }else if ($amount < 10000 && $amount >= 0) {
   
-    $sql = "INSERT INTO transactions ( SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED)";
-    $sql.= "VALUES ('$sender', '$recipient', '$amount', '$tan', '$date', "0", '$date');";
+    $sql = "INSERT INTO transactions ( SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED)";
+    #$sql.= "VALUES ($sender, $recipient, $amount, $tan, '$date', '0', '$date');"; //'0' not "0"
+    $sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 8, '$date');"; //'0' not "0"
     return executeNonQuery($sql, $connection);
 
-  }else{}
+  } else{}
 }
 
 // update transaction approval
-function updateTransactionApproval($id, $approver, $decison) {
+function updateTransactionApproval($id, $approver, $decision) { //decision
   // $decision = A / D / P. Approved, Denied, Pending
   $connection = openDb();
-  $date = date('d.m.Y H:i');
+  //$date = date('d.m.Y H:i');
+  $date = date('Y.m.d');
   $sql = "UPDATE transactions SET APPROVED_BY='$approver', DATE_APPROVED='$date', STATUS='$decision' WHERE id='$id' ";
-  return executeQuery($sql, $connection);
+  return executeNonQuery($sql, $connection); //It doesn't return a record list --> non-query ?
 }
 
 // insert new tans
@@ -190,14 +230,14 @@ function updateTanStatus($tanId, $status) {
   // possible values = U / V. Used, Valid.
   $connection = openDb();
   $sql = "UPDATE tans SET STATUS='$status' WHERE ID='$tanId' ";
-  return executeQuery($sql, $connection);
+  return executeNonQuery($sql, $connection);
 }
 
 // select tan
 function getSingleTan($tan) {
   $connection = openDb();
-  $sql = "SELECT * FROM `tans` WHERE ID = $id";
-  return executeQuery($sql, $connection);
+  $sql = "SELECT * FROM `tans` WHERE TAN_NUMBER = '$tan'";
+  return executeQuery($sql, $connection,true);
 }
 
 ?>

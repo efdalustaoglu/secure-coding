@@ -119,13 +119,6 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
   return executeNonQuery($sql, $connection);
 }
 
-//Update account balance of the sender/recipient during a transaction
-function updateBalance($account, $new_balance) {
-  $connection = openDb();
-  $sql = "UPDATE accounts SET BALANCE = $new_balance WHERE ACCOUNT_NUMBER = $account";
-  return executeNonQuery($sql, $connection);
-}
-
 // update user registration
 function updateUserRegistration($id, $approver, $decision) {
   $connection = openDb();
@@ -152,7 +145,15 @@ function deleteUserRegistration($id) {
 // select all transactions
 function selectTransactions() {
   $connection = openDb();
-  $sql = "SELECT * FROM transactions";
+  $sql = "SELECT * FROM transaction_view";
+  return executeQuery($sql, $connection);
+}
+
+// select a user's transactions
+function selectTransactionsByUserId($id) {
+  $connection = openDb();
+  $id = (int) $id;
+  $sql = "SELECT * FROM transaction_view WHERE SENDER_ACCOUNT = $id OR RECIPIENT_ACCOUNT = $id";
   return executeQuery($sql, $connection);
 }
 
@@ -160,7 +161,7 @@ function selectTransactions() {
 function selectTransaction($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "SELECT * FROM transactions WHERE ID = $id";
+  $sql = "SELECT * FROM transaction_view WHERE ID = $id";
   return executeQuery($sql, $connection, true);
 }
 
@@ -169,13 +170,34 @@ function insertTransaction($sender, $recipient, $amount, $tan) {
   $connection = openDb();
   $date = date('Y-m-d');
 
-  if ($amount >= 10000) {
+  if ($amount > 10000) {
     $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
     $sql.= "VALUES ($sender, $recipient, $amount, 'P', $tan, '$date')";
   } else {
     $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
     $sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 6, '$date')";
   }
+  return executeNonQuery($sql, $connection);
+}
+
+//Update account balance of the sender/recipient during a transaction
+function updateBalance($sender, $recipient, $amount) {
+  $senderBalance = selectAccountById($sender)->BALANCE;
+  $recipientBalance = selectAccountById($recipient)->BALANCE;
+
+  $newSenderBalance = $senderBalance - $amount;
+  $newRecipientbalance = $recipientBalance + $amount;
+
+  $connection = openDb();
+  $sql = "UPDATE accounts SET BALANCE = $newSenderBalance WHERE ID = $sender";
+
+  if (!executeNonQuery($sql, $connection)) {
+    return false;
+  } 
+
+  $connection = openDb();
+  $sql = "UPDATE accounts SET BALANCE = $newRecipientbalance WHERE ID = $recipient";
+  
   return executeNonQuery($sql, $connection);
 }
 
@@ -245,10 +267,17 @@ function selectAccountByNumber($accountNumber) {
   return executeQuery($sql, $connection, true);
 }
 
-// select account account by account id
+// select account account by user id
 function selectAccountByUserId($id) {
   $connection = openDb();
   $sql = "SELECT * FROM accounts WHERE USER = $id";
+  return executeQuery($sql, $connection, true);
+}
+
+// select account account by user id
+function selectAccountById($id) {
+  $connection = openDb();
+  $sql = "SELECT * FROM accounts WHERE ID = $id";
   return executeQuery($sql, $connection, true);
 }
 

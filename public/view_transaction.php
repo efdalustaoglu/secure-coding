@@ -5,23 +5,22 @@ require_once "../app/transaction.php";
 
 startSession(true);
 
-// get single transaction
-if (isset($_GET['id'])) {
-  $id = $_GET['id'];
-  $transaction = getSingleTransaction($id,true);
-}
-
 // process form
 if (isset($_POST['approve']) || isset($_POST['deny'])) {
   $id = $_POST['transactionid'];
-  $decision = (isset($_POST['approve'])) ? true : false; //NOT "A" (Accepted) /"D" (Declined) ?
+  $decision = (isset($_POST['approve'])) ? "A" : "D";
   $approver = getAuthUser()->userid;
-  $approval = approveTransaction($id, $approver, $decison, $transaction); //I need sender recipient ids to actually transfer the money, so I included the $transaction
+  $approval = approveTransaction($id, $approver, $decision); 
+  
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
   }
-  //On my browser, after a transaction update, the displayed data weren't refreshed, so I included the following:
-  $transaction = getSingleTransaction($id,true);
+}
+
+// get single transaction
+if (isset($_GET['id'])) {
+  $id = $_GET['id'];
+  $transaction = getSingleTransaction($id);
 }
 
 // include header
@@ -40,17 +39,17 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Sender</label>
-      <span><?php echo $transaction->SENDER_ACCOUNT; ?></span>
+      <span><?php echo $transaction->SENDER_ACCOUNT_NUM; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Recipient</label>
-      <span><?php echo $transaction->RECIPIENT_ACCOUNT; ?></span>
+      <span><?php echo $transaction->RECIPIENT_ACCOUNT_NUM; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Amount</label>
-      <span><?php echo $transaction->AMOUNT; ?></span>
+      <span><?php echo number_format($transaction->AMOUNT); ?></span>
     </div>
 
     <div class="pure-control-group">
@@ -60,12 +59,12 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Tan</label>
-      <span><?php echo $transaction->TAN_ID; ?></span>
+      <span><?php echo $transaction->TAN_NUMBER; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Approved By</label>
-      <span><?php echo $transaction->APPROVED_BY; ?></span>
+      <span><?php echo $transaction->APPROVED_BY_NAME; ?></span>
     </div>
 
     <div class="pure-control-group">

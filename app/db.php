@@ -28,7 +28,7 @@ function returnValue() {
 function openDb() {
   $host = "localhost";
   $username = "root";
-  $password = "f+,xkFJ2";
+  $password = "";
   $database = "bank_db";
 
   // create connection

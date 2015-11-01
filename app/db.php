@@ -185,8 +185,7 @@ function selectTransaction($id) {
 // insert into transactions table
 function insertTransaction($sender, $recipient, $amount, $tan) {
   $connection = openDb();
-//  $date = date('d.m.Y H:i');
-  $date = date('Y.m.d');
+  $date = date('d.m.Y H:i');
 
   if ($amount >= 10000) {
   
@@ -207,8 +206,7 @@ function insertTransaction($sender, $recipient, $amount, $tan) {
 function updateTransactionApproval($id, $approver, $decision) { //decision
   // $decision = A / D / P. Approved, Denied, Pending
   $connection = openDb();
-  //$date = date('d.m.Y H:i');
-  $date = date('Y.m.d');
+  $date = date('d.m.Y H:i');
   $sql = "UPDATE transactions SET APPROVED_BY='$approver', DATE_APPROVED='$date', STATUS='$decision' WHERE id='$id' ";
   return executeNonQuery($sql, $connection); //It doesn't return a record list --> non-query ?
 }

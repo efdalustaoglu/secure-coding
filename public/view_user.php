@@ -63,6 +63,16 @@ include("header.php");
     </div>
 
     <div class="pure-control-group">
+      <label>Account number</label>
+      <span><?php echo $user->ACCOUNT_NUMBER; ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Balance</label>
+      <span><?php echo number_format($user->BALANCE); ?></span>
+    </div>
+
+    <div class="pure-control-group">
       <label>Approved By</label>
       <span><?php echo $user->APPROVED_BY; ?></span>
     </div>

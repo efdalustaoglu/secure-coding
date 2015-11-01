@@ -59,7 +59,7 @@ function login($email, $password) {
     return $return;
   }
   
-  #$password = md5($password);
+  $password = md5($password);
   $login = selectByEmailAndPassword($email, $password);
 
   if (!$login) {

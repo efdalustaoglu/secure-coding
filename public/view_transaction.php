@@ -11,7 +11,6 @@ if (isset($_GET['id'])) {
 // process form
 if (isset($_POST['approve']) || isset($_POST['deny'])) {
   $id = $_POST['transactionid'];
-  #$id = $_GET['id'];
   $decision = (isset($_POST['approve'])) ? true : false; //NOT "A" (Accepted) /"D" (Declined) ?
   $approver = getAuthUser()->userid;
   $approval = approveTransaction($id, $approver, $decison, $transaction); //I need sender recipient ids to actually transfer the money, so I included the $transaction
@@ -19,10 +18,7 @@ if (isset($_POST['approve']) || isset($_POST['deny'])) {
     $showMsg = $approval->msg;
   }
   //On my browser, after a transaction update, the displayed data weren't refreshed, so I included the following:
-  if (isset($_GET['id'])) {
-    $id = $_GET['id'];
-    $transaction = getSingleTransaction($id);
-  }
+  $transaction = getSingleTransaction($id);
 }
 // include header
 $pageTitle = "View Transaction";

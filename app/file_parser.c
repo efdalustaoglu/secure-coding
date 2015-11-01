@@ -326,7 +326,7 @@ int updateTANStatus(char *tan){
 **/
 
 int registerTransaction(transaction_info *transaction){
-	char query[210] = {0};
+	char query[250] = {0};
 	MYSQL_RES  *query_res = NULL;
 	MYSQL_ROW  row = NULL;
 	int tan_id = 0;
@@ -358,14 +358,38 @@ int registerTransaction(transaction_info *transaction){
 	// if the money transfer is about more than 10000 Euros, it is not executed immidiately, but has to wait for approval
 	// so we treat the two cases separately, as the transaction status and the balances on both accounts (sender and recipient) are dependent on the amount of money transfered
 	if(transaction->amount > 10000){
-		if(sprintf(query, "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) VALUES (%d, %d, %f, 'P', %d, CURDATE())",
+		if(sprintf(query, "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) VALUES ('%d', '%d', '%f', 'P', '%d', CURDATE())",
 			transaction->sender_account->id, transaction->recipient_account->id, transaction->amount, tan_id) < 0){
 			return INTERNAL_ERROR;
 		}
 	}
 	else{
-		if(sprintf(query, "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_APPROVED, DATE_CREATED) VALUES (%d, %d, %f, 'A', %d, CURDATE(), CURDATE())",
-			transaction->sender_account->id, transaction->recipient_account->id, transaction->amount, tan_id) < 0){
+
+		// the transaction should be approved automatically => we need to find out the user ID of 'system'
+		int system_id = 0;
+		memset(query, 0, 60);
+		mysql_free_result(query_res);
+		if(strcpy(query, "SELECT ID FROM users WHERE USER_TYPE = 'S'") == NULL){
+			return INTERNAL_ERROR;
+		}
+
+		// execute
+		query_res = executeQueryReply(query);
+		if(query_res == NULL){
+			return MYSQL_QUERY_ERROR;
+		}
+
+		// get the first row; again, there should just be one
+		if((row = mysql_fetch_row(query_res)) == NULL){
+			return MYSQL_QUERY_ERROR;
+		}
+
+		// safe the ID in a separate variable
+		system_id = atoi(row[0]);
+
+
+		if(sprintf(query, "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, APPROVED_BY, DATE_APPROVED, DATE_CREATED) VALUES ('%d', '%d', '%f', 'A', '%d', '%d', CURDATE(), CURDATE())",
+			transaction->sender_account->id, transaction->recipient_account->id, transaction->amount, tan_id, system_id) < 0){
 			return INTERNAL_ERROR;
 		}
 	}
@@ -512,6 +536,9 @@ int copyTrimmedString(char *source, char *destination, short destinationMaxSize)
 	// copy byte by byte from the source string to the destination string, until we reach a NULL character,
 	// a whitespace character (including ' ', '\t', '\n', '\r', '\f', 'v') or the maximum size - 1 of the destination string
 	while(bytesCopied < destinationMaxSize - 1 && !isspace(*source) && *source != 0){
+		if(*source == '\'' || *source == '\"' || *source == '\b' || *source == '\Z' || *source == '\\' || *source == '\%' || *source == '\_'){
+			return PARAMETER_ERROR;   // these characters have to be caught 
+		}
 		*destination = *source;
 		destination++;
 		source++;
@@ -687,6 +714,37 @@ int parseFile(const char *path, transaction_info *transaction) {
 }
 
 
+
+/**
+ * Frees memory occupied on the heap
+ * 
+ * @param transaction Pointer to a struct transaction, that may occupy memory on the heap
+**/
+
+void releaseMemory(transaction_info *transaction){
+	if(transaction != NULL){
+		if(transaction->sender_account != NULL){
+			if(transaction->sender_account->date_created != NULL){
+				free(transaction->sender_account->date_created);
+			}
+			free(transaction->sender_account);
+		}
+		if(transaction->recipient_account != NULL){
+			if(transaction->recipient_account->date_created != NULL){
+				free(transaction->recipient_account->date_created);
+			}
+			free(transaction->recipient_account);
+		}
+		if(transaction->tan != NULL){
+			free(transaction->tan);
+		}
+		free(transaction);
+		transaction = NULL;
+	}
+}
+
+
+
 /**
  * Function that is called first when the program is executed. The program expects 4 arguments:
  *
@@ -719,15 +777,20 @@ int main(int argc, char **argv){
 		printf("%d\n", MEMORY_ERROR);
 		return MEMORY_ERROR;
 	}
+	transaction->sender_account = NULL;
+	transaction->recipient_account = NULL;
+	transaction->tan = NULL;
 	
 	// connect to the database
 	result = mysqlConnect();
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
 	result = mysqlSelectDB();
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
@@ -735,12 +798,14 @@ int main(int argc, char **argv){
 	// read the file
 	result = parseFile(path, transaction);
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
 	
 	// check for obvious errors
 	if(transaction->sender_account == NULL || transaction->recipient_account == NULL){
+		releaseMemory(transaction);
 		printf("%d\n", ACCOUNT_NOT_FOUND);
 		return ACCOUNT_NOT_FOUND;
 	}
@@ -748,6 +813,7 @@ int main(int argc, char **argv){
 	// perform the transaction
 	result = transferMoney(transaction);
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
@@ -755,6 +821,7 @@ int main(int argc, char **argv){
 	// update the TAN status in the database
 	result = updateTANStatus(transaction->tan);
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
@@ -762,6 +829,7 @@ int main(int argc, char **argv){
 	// safe the transaction
 	result = registerTransaction(transaction);
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
@@ -769,9 +837,12 @@ int main(int argc, char **argv){
 	// close database connection
 	result = mysqlCloseConnection();
 	if(result != RETURN_SUCCESS){
+		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
+
+	releaseMemory(transaction);
 	
 	// exit
 	printf("%d\n", RETURN_SUCCESS);

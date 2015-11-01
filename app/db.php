@@ -100,7 +100,6 @@ function selectByEmailAndPassword($email, $password) {
   $connection = openDb();
   $email = escape($email, $connection);
   $password = escape($password, $connection);
-
   $sql = "SELECT * FROM users WHERE EMAIL = '$email' AND PASSWORD = '$password' AND DATE_APPROVED IS NOT NULL";
   return executeQuery($sql, $connection, true);
 }
@@ -117,6 +116,13 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
 
   $sql = "INSERT INTO users (USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
   $sql.= "VALUES ('$userType', '$email', '$password', '$firstname', '$lastname', '$date')";
+  return executeNonQuery($sql, $connection);
+}
+
+//Update account balance of the sender/recipient during a transaction
+function updateBalance($account, $new_balance) {
+  $connection = openDb();
+  $sql = "UPDATE accounts SET BALANCE = $new_balance WHERE ACCOUNT_NUMBER = $account";
   return executeNonQuery($sql, $connection);
 }
 
@@ -158,13 +164,28 @@ function selectTransaction($id) {
   return executeQuery($sql, $connection, true);
 }
 
+// insert into transactions table
+function insertTransaction($sender, $recipient, $amount, $tan) {
+  $connection = openDb();
+  $date = date('Y-m-d');
+
+  if ($amount >= 10000) {
+    $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
+    $sql.= "VALUES ($sender, $recipient, $amount, 'P', $tan, '$date')";
+  } else {
+    $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
+    $sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 6, '$date')";
+  }
+  return executeNonQuery($sql, $connection);
+}
+
 // update transaction approval
-function updateTransactionApproval($id, $approver, $decison) {
+function updateTransactionApproval($id, $approver, $decision) {
   // $decision = A / D / P. Approved, Denied, Pending
   $connection = openDb();
   $date = date('Y-m-d');
   $sql = "UPDATE transactions SET APPROVED_BY = $approver, DATE_APPROVED = '$date', STATUS = '$decision' WHERE id = $id";
-  return executeQuery($sql, $connection);
+  return executeNonQuery($sql, $connection);
 }
 
 // insert new tans
@@ -182,7 +203,6 @@ function insertTan($tan, $client) {
 function updateTanStatus($tanId) {
   // possible values = U / V. Used, Valid.
   $connection = openDb();
-
   $sql = "UPDATE tans SET STATUS = 'U' WHERE ID = $tanId";
   return executeNonQuery($sql, $connection);
 }
@@ -233,3 +253,4 @@ function selectAccountByUserId($id) {
 }
 
 ?>
+

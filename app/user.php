@@ -3,6 +3,7 @@
 if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 
 require_once "db.php";
+require_once "transaction.php";
 
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
@@ -58,7 +59,7 @@ function login($email, $password) {
     return $return;
   }
   
-  $password = md5($password);
+  #$password = md5($password);
   $login = selectByEmailAndPassword($email, $password);
 
   if (!$login) {
@@ -296,32 +297,33 @@ function sendEmail($email, $name, $subject, $body) {
 }
 
 // generate PDF file
-function generatePDF($userId) {
-  require('FPDF/fpdf.php');
-  $pdf = new FPDF(); //create the instance
+function generatePDF($userId){
+  require('../FPDF/fpdf.php');
+  $pdf = new FPDF();//create the instance
   $pdf->AddPage();
   $pdf->SetFont('Helvetica','B',18);//set the font style
-  $pdf->Cell(75);//start 7.5 cm from right
-  $pdf->Cell(0,10,"Tan Numbers");//name the title
-  $pdf->SetFont('Helvetica','',15);
 
-  $pdf->Ln(15);//linebreak
-
-  $tans = getTansByUserId($userId);
-
-  $i = 0;
-  foreach ($tans as $tan) {
-    $pdf->SetFont('Helvetica','B',15);
-    $pdf->Cell(15, 10, ($i+1) . " - )");
-    $pdf->SetFont('Helvetica','',15);
-    $pdf->Cell(0,10," $tan->TAN_NUMBER");
-    $pdf->Ln(10);
-    $i++;
+  
+  $transactions = getTransactions(true);
+  $account = getAccountByUId($userId);
+  $pdf->SetFont('Helvetica','B',11);
+  $pdf->Cell(79, 10, "#  Created On  Sender  Recipient  Amount  Status  Tan  Approved By  Approved On");
+  $pdf->Ln(10);
+  foreach($transactions as $transaction) {
+    if($account->ACCOUNT_NUMBER == $transaction->SENDER_ACCOUNT) {
+      if ($transaction->STATUS === "A") $status = "Approved"; 
+      else if ($transaction->STATUS === "D") $status = "Declined"; 
+      else $status = "Pending";
+      $pdf->SetFont('Helvetica','B',11);
+      $pdf->Cell(90, 10, "$transaction->ID $transaction->DATE_CREATED $transaction->SENDER_ACCOUNT $transaction->RECIPIENT_ACCOUNT $transaction->AMOUNT $status $transaction->TAN_ID $transaction->APPROVED_BY $transaction->DATE_APPROVED");
+      $pdf->SetFont('Helvetica','',15);
+      //$pdf->Cell(0,10," $tan->TAN_NUMBER");
+      $pdf->Ln(10);
+    }
   }
-
   //$pdf->Output();//print the pdf file to the screen
   
-  $doc = $pdf->Output('', 'S'); //Save the pdf file 
+  $doc = $pdf->Output('transactions.pdf', 'D');//Save the pdf file 
   return $doc;
 }
 

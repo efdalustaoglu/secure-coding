@@ -105,7 +105,7 @@ function getAccountByAccNumber($account_number) {
 function getAccountByUId($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "SELECT * FROM accounts WHERE CLIENT_USER = $id";
+  $sql = "SELECT * FROM accounts WHERE USER = $id";
   return executeQuery($sql, $connection, true);
 }
 

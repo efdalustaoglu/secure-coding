@@ -5,10 +5,32 @@ if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 require_once "db.php";
 
 // gets all transactions
-function getTransactions() {
+function getTransactions($display = false) {
   $transactions = selectTransactions();
-  foreach($transactions as $transaction) {
-    $returnSet[] = (object) array(
+  if ($display) {
+    foreach($transactions as $transaction) {
+      $returnSet[] = (object) array(
+        "ID" => $transaction->ID,
+        "SENDER_ACCOUNT" => getAccountByAccId($transaction->SENDER_ACCOUNT)->ACCOUNT_NUMBER,
+        "RECIPIENT_ACCOUNT" => getAccountByAccId($transaction->RECIPIENT_ACCOUNT)->ACCOUNT_NUMBER,
+        "AMOUNT" => $transaction->AMOUNT,
+        "STATUS" => $transaction->STATUS,
+        "TAN_ID" => getSingleTanById($transaction->TAN_ID)->TAN_NUMBER,
+        "APPROVED_BY" => $transaction->APPROVED_BY != 0 ? selectUser($transaction->APPROVED_BY)->LAST_NAME ." ". selectUser($transaction->APPROVED_BY)->FIRST_NAME : $transaction->APPROVED_BY,
+        "DATE_APPROVED" => $transaction->DATE_APPROVED,
+        "DATE_CREATED" => $transaction->DATE_CREATED
+      );
+    }
+    return $returnSet;
+  }
+  return $transactions;
+}
+
+// gets a single transaction
+function getSingleTransaction($id, $display = false) {
+  $transaction = selectTransaction($id);
+  if ($display) {
+    $return = array(
       "ID" => $transaction->ID,
       "SENDER_ACCOUNT" => getAccountByAccId($transaction->SENDER_ACCOUNT)->ACCOUNT_NUMBER,
       "RECIPIENT_ACCOUNT" => getAccountByAccId($transaction->RECIPIENT_ACCOUNT)->ACCOUNT_NUMBER,
@@ -19,25 +41,9 @@ function getTransactions() {
       "DATE_APPROVED" => $transaction->DATE_APPROVED,
       "DATE_CREATED" => $transaction->DATE_CREATED
     );
+    return (object) $return;
   }
-  return $returnSet;
-}
-
-// gets a single transaction
-function getSingleTransaction($id) {
-  $transaction = selectTransaction($id);
-  $return = array(
-    "ID" => $transaction->ID,
-    "SENDER_ACCOUNT" => getAccountByAccId($transaction->SENDER_ACCOUNT)->ACCOUNT_NUMBER,
-    "RECIPIENT_ACCOUNT" => getAccountByAccId($transaction->RECIPIENT_ACCOUNT)->ACCOUNT_NUMBER,
-    "AMOUNT" => $transaction->AMOUNT,
-    "STATUS" => $transaction->STATUS,
-    "TAN_ID" => getSingleTanById($transaction->TAN_ID)->TAN_NUMBER,
-    "APPROVED_BY" => $transaction->APPROVED_BY != 0 ? selectUser($transaction->APPROVED_BY)->LAST_NAME ." ". selectUser($transaction->APPROVED_BY)->FIRST_NAME : $transaction->APPROVED_BY,
-    "DATE_APPROVED" => $transaction->DATE_APPROVED,
-    "DATE_CREATED" => $transaction->DATE_CREATED
-  );
-  return (object) $return;
+  return $transaction;
 }
 
 function transferAmount($sender,$recipient,$amount) {
@@ -143,6 +149,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
 // approve / deny a transaction
 function approveTransaction($id, $approver, $decision, $transaction) { //reasons for $transaction explained on view_transaction.php
   $return  = returnValue();
+  $transaction = getSingleTransaction($transaction->ID);
   if (!filter_var($id, FILTER_VALIDATE_INT) or $id < 1) {
     $return->value = false;
     $return->msg = "Invalid transaction id.";

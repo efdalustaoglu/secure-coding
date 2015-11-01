@@ -8,17 +8,6 @@ if (isset($_GET['download'])) {
   if (download == true) {
     $pdf = generatePDF(getAuthUser()->userid);
     return $pdf;
-
-    $file_name = $_SERVER['PATH_INFO'];
-$file = '/path/to/pdf/files' . $file_name;
-if (file_exists($file)) {
-    header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment;filename="' . basename($file_name) . '"');
-    header('Content-Length: ' . filesize($file));
-    readfile($file);
-} else {
-    header('HTTP/1.1 404 Not Found');
-}
   }
 }
 $transactions = getTransactions(true);

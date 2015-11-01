@@ -1,17 +1,490 @@
-
+// Includes
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>
 #include <string.h>
-#include <ctype.h>
+#if defined __WIN32__ || _MSC_VER
+   #include "my_global.h"
+   #include "mysql.h"
+#else
+   #include <mysql.h>
+#endif
 
+// Definition of error codes returned by the program (excl. MySQL specific error codes)
 #define RETURN_SUCCESS 0
 #define PARAMETER_ERROR -1
 #define IO_ACCESS_ERROR -2
 #define IO_READ_ERROR -3
 #define FILE_FORMAT_ERROR -4
 #define MEMORY_ERROR -5
+#define INTERNAL_ERROR -6
+#define MYSQL_QUERY_ERROR -7
+#define ACCOUNT_NOT_FOUND -8
+#define SENDER_RECEIVER_EQUAL -9
+#define TAN_INVALID -10
+#define CRITICAL_ACCOUNT_BALANCE -11
+
+
+// Definition of structs
+typedef struct account_struct{
+	int id;
+	int user;
+	int account_number;
+	double balance;
+	char *date_created;
+} account;
+
+typedef struct transaction_struct{
+	account *sender_account;
+	account *recipient_account;
+	double amount;
+	char *tan;
+} transaction_info;
+	
+// Global variables
+MYSQL *mysql = NULL;
+char *db_user = "root";
+char *db_password = "root";
+char *db_name = "bank_db";
+
+
+
+//-------------------------------------------------------------------------- Database Operations ------------------------------------------------------------------------
+
+
+/**
+ * Connects to a local MySQL server, using the login information given in global variables
+ *
+ * @return 0 if successful, a non-zero MySQL error code if not successful
+**/
+
+int mysqlConnect(){
+	// init
+	mysql=mysql_init(mysql);
+	
+	// check for possible errors
+	if (mysql_errno(mysql) != 0) {
+		//printf("%s\n", mysql_error(mysql));
+		return mysql_errno(mysql);
+	}
+	
+	// connect to a local MySQL server
+	mysql_real_connect(mysql, "127.0.0.1", db_user, db_password, NULL, 0, NULL, 0);
+	if (mysql_errno(mysql) != 0) {
+		//printf("%s\n", mysql_error(mysql));
+		return mysql_errno(mysql);
+	}
+	
+	return RETURN_SUCCESS;
+}
+
+
+
+/**
+ * Closes the connection to a local MySQL server
+ *
+ * @return 0 if successful, a non-zero MySQL error code or -5 if not successful. -5 is returned if no active connection was found
+**/
+
+int mysqlCloseConnection(){
+	// if mysql has not been initialized, there is no connection to close
+	if(mysql != NULL){
+		mysql_close(mysql);
+		if (mysql_errno(mysql) != 0) {
+			//printf("%s\n", mysql_error(mysql));
+			return mysql_errno(mysql);
+		}
+	}
+	else{
+		return MEMORY_ERROR;
+	}
+	
+	return RETURN_SUCCESS;
+}
+
+
+
+/**
+ * Selects a database on the MySQL server, using information given in global variables
+ *
+ * @return 0 if successful, a non-zero MySQL error code if not successful
+**/
+
+int mysqlSelectDB(){
+	mysql_select_db(mysql, db_name);
+	if (mysql_errno(mysql) != 0) {
+		//printf("%s\n", mysql_error(mysql));
+		return mysql_errno(mysql);
+	}
+	
+	return RETURN_SUCCESS;
+}
+
+
+
+/**
+ * Executes a query without returning data from the database
+ *
+ * @param query Pointer to a NULL-terminated string containing the SQL statement to be executed
+ * @return 0 if successful, a non-zero MySQL error code if not successful
+**/
+
+int executeQuery(char *query){
+	mysql_real_query(mysql, query, strlen(query));
+	if(mysql_errno(mysql) != 0) {
+		//printf("%s\n", mysql_error(mysql));
+		return mysql_errno(mysql);
+	}
+	
+	return RETURN_SUCCESS;
+}
+
+
+
+/**
+ * Executes an SQL query and returns the resulting data from the database
+ *
+ * @param query Pointer to a NULL-terminated string containing the SQL statement to be executed
+ * @return Pointer to the data set(s) provided by the database in response (if successful), NULL if not successful
+**/
+
+MYSQL_RES  *executeQueryReply(char *query){
+	MYSQL_RES  *query_res = NULL;
+	mysql_real_query(mysql, query, strlen(query));
+	if(mysql_errno(mysql) != 0) {
+		//printf("%s\n", mysql_error(mysql));
+		return NULL;
+	}
+
+	query_res = mysql_store_result(mysql);
+	if(mysql_errno(mysql) != 0) {
+		//printf("%s\n", mysql_error(mysql));
+		return NULL;
+	}
+	
+	return query_res;
+}
+
+
+
+/**
+ * Fetches bank account information from the database
+ *
+ * @param accountNumber Account number (not ID) of the account for which information should be retrieved
+ * @return Pointer to a struct account containing account information if successfull, a NULL pointer if not succesful
+**/
+
+account *getAccount(int accountNumber){
+	char query[60] = {0};
+	MYSQL_ROW  row = NULL;
+	MYSQL_RES  *query_res = NULL;
+	
+	// catch wrong inputs
+	if(accountNumber < 0){
+		return NULL;
+	}
+	
+	// create the SQL statement
+	if(sprintf(query, "SELECT * FROM accounts WHERE ACCOUNT_NUMBER = '%d'", accountNumber) < 0){
+		return NULL;
+	}
+	
+	// execute the query
+	query_res = executeQueryReply(query);
+	if(query_res == NULL || mysql_num_rows(query_res) != 1){
+		return NULL;
+	}
+	
+	// get the first row from the data retrieved
+	if((row = mysql_fetch_row(query_res)) == NULL){
+		return NULL;
+	}
+	
+	// we expect each row to have 5 fields
+	if(mysql_num_fields(query_res) != 5){
+		return NULL;
+	}
+	
+	// get the length of each field in the row; this is required to later create a NULL-terminated string for the date
+	unsigned long *field_lengths = mysql_fetch_lengths(query_res);
+	
+	// create a new account structure in memory
+	account *acc = (account *) malloc(sizeof(struct account_struct));
+	if(acc == NULL){
+		return NULL;
+	}
+	
+	// fill user field
+	acc->id = atoi(row[0]);				// atoi() can be used here, since the field in the database can only store int => no overflow possible
+	acc->user = atoi(row[1]);
+	acc->account_number = atoi(row[2]);
+	acc->balance = atof(row[3]);			// atof() returns double (not float as the 'f' suggests) => no overflow possible
+	
+	// We have no idea how format DATE is saved in SQL, NULL-terminated or not, so we go the safe way => create a new NULL-terminated char array containing the DATE data
+	char *creation_date = (char *) malloc(field_lengths[4] + 1);
+	if(creation_date == NULL){
+		mysql_free_result(query_res);
+		return NULL;
+	}
+	memcpy(creation_date, &row[4], field_lengths[4]);
+	creation_date[field_lengths[4]] = 0;
+	acc->date_created = creation_date;
+	mysql_free_result(query_res);
+	return acc;
+}
+
+
+
+/**
+ * Checks if a given TAN is valid by checking its existence, status (valid or previously used) and  assignment to a specific bank account
+ *
+ * @param tan Pointer to a NULL-terminated string containing the 15 character (excl. '\0') long TAN
+ * @param acc Pointer to a struct account containing information about the bank account with which the TAN is intended to be used
+ * @return 0 if successful, a non-zero error code if unsuccessful
+**/
+
+int verifyTAN(char *tan, account *acc){
+	char query[77] = {0};
+	MYSQL_RES  *query_res = NULL;
+	MYSQL_ROW row = NULL;
+	
+	// catch wrong inputs
+	if(acc == NULL || tan == NULL || tan[15] != 0 || strlen(tan) != 15){
+		return PARAMETER_ERROR;
+	}
+	
+	// create an SQL statement to get the bank account and the status associated with the TAN
+	if(sprintf(query, "SELECT CLIENT_ACCOUNT, STATUS FROM tans WHERE TAN_NUMBER = '%s'", tan) < 0){
+		return INTERNAL_ERROR;
+	}
+	
+	// execute the query
+	query_res = executeQueryReply(query);
+	if(query_res == NULL || mysql_num_rows(query_res) < 1){
+		return MYSQL_QUERY_ERROR;
+	}
+	
+	// get the first row (there should be just one)
+	if((row = mysql_fetch_row(query_res)) == NULL){
+		return MYSQL_QUERY_ERROR;
+	}
+	
+	// save the bank account ID and the status
+	int client_account_id = atoi(row[0]);
+	char tan_status = (char) *row[1];
+	
+	// check if the TAN is assigned to the account; if not, the TAN is not verified
+	if(client_account_id != acc->id){
+		mysql_free_result(query_res);
+		return TAN_INVALID;
+	}
+	
+	// check if the TAN has status 'valid'
+	if(tan_status != 'V'){
+		mysql_free_result(query_res);
+		return TAN_INVALID;
+	}
+	
+	mysql_free_result(query_res);
+	return RETURN_SUCCESS;
+}
+
+
+
+/**
+ * Sets the status of a given TAN to 'used' in the database
+ *
+ * @param tan Pointer to a NULL-terminated string containing the 15 character (excl. '\0') long TAN
+ * @return 0 if successful, a non-zero error code if unsuccessful
+**/
+
+int updateTANStatus(char *tan){
+	char query[66] = {0};
+	
+	// catch wrong inputs
+	if(tan == NULL || tan[15] != 0 || strlen(tan) != 15){
+		return PARAMETER_ERROR;
+	}
+	
+	// create an SQL statement to update the status field for the tan
+	if(sprintf(query, "UPDATE tans SET STATUS = 'U' WHERE TAN_NUMBER = '%s'", tan) < 0){
+		return INTERNAL_ERROR;
+	}
+	
+	// execute
+	return executeQuery(query);
+
+}
+
+
+/**
+ * Saves information about an executed money transaction in the database
+ *
+ * @param transaction Pointer to a struct transaction_info containing information about the executed transaction
+ * @return 0 if successful, a non-zero error code if unsuccessful
+**/
+
+int registerTransaction(transaction_info *transaction){
+	char query[210] = {0};
+	MYSQL_RES  *query_res = NULL;
+	MYSQL_ROW  row = NULL;
+	int tan_id = 0;
+	
+	// catch wrong input
+	if(transaction == NULL){
+		return PARAMETER_ERROR;
+	}
+	
+	// create an SQL statement for retrieving the ID of the TAN; this is required to later safe it as part of the transaction information
+	if(sprintf(query, "SELECT ID FROM tans WHERE TAN_NUMBER = '%s'", transaction->tan) < 0){
+		return INTERNAL_ERROR;
+	}
+	
+	// execute
+	query_res = executeQueryReply(query);
+	if(query_res == NULL || mysql_num_rows(query_res) < 1){
+		return MYSQL_QUERY_ERROR;
+	}
+	
+	// get the first row; again, there should just be one
+	if((row = mysql_fetch_row(query_res)) == NULL){
+		return MYSQL_QUERY_ERROR;
+	}
+	
+	// safe the ID in a separate variable
+	tan_id = atoi(row[0]);
+	
+	// if the money transfer is about more than 10000 Euros, it is not executed immidiately, but has to wait for approval
+	// so we treat the two cases separately, as the transaction status and the balances on both accounts (sender and recipient) are dependent on the amount of money transfered
+	if(transaction->amount > 10000){
+		if(sprintf(query, "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) VALUES (%d, %d, %f, 'P', %d, CURDATE())",
+			transaction->sender_account->id, transaction->recipient_account->id, transaction->amount, tan_id) < 0){
+			return INTERNAL_ERROR;
+		}
+	}
+	else{
+		if(sprintf(query, "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_APPROVED, DATE_CREATED) VALUES (%d, %d, %f, 'A', %d, CURDATE(), CURDATE())",
+			transaction->sender_account->id, transaction->recipient_account->id, transaction->amount, tan_id) < 0){
+			return INTERNAL_ERROR;
+		}
+	}
+	mysql_free_result(query_res);
+	
+	// execute
+	return executeQuery(query);
+}
+
+
+
+/**
+ * Executes a money transfer
+ *
+ * @param transaction Pointer to a struct transaction_info containing information about the transaction to be executed
+ * @return 0 if successful, a non-zero error code if unsuccessful
+**/
+
+int transferMoney(transaction_info *transaction){
+	char query[200] = {0};	//410
+	MYSQL_RES *query_res = NULL;
+	MYSQL_ROW  row = NULL;
+	int result = 0;
+	
+	// check for wrong inputs
+	if(transaction == NULL){
+		return PARAMETER_ERROR;
+	}
+	
+	if(transaction->sender_account == NULL || transaction->recipient_account == NULL){
+		return PARAMETER_ERROR;
+	}
+	
+	// if sending and receiving account are the same, the transfer will be denied
+	if(transaction->sender_account->account_number == transaction->recipient_account->account_number){
+		return SENDER_RECEIVER_EQUAL;
+	}
+	
+	// verify the TAN
+	result = verifyTAN(transaction->tan, transaction->sender_account);
+	if(result != RETURN_SUCCESS){
+		return result;
+	}
+	
+	// check if there's enough money on the sender's account (may lead to a negative balance otherwise)
+	if(transaction->sender_account->balance < transaction->amount){
+		return CRITICAL_ACCOUNT_BALANCE;
+	}
+	
+	// check if there is too much money on the receiving account (may lead to an overflow otherwise)
+	if(transaction->recipient_account->balance > 2147483647 - transaction->amount){
+		return CRITICAL_ACCOUNT_BALANCE;
+	}
+	
+	// if more than 10000 Euros are about to be transfered, we must not execute it right now
+	if(transaction->amount > 10000){
+		return RETURN_SUCCESS;
+	}
+	
+	// create an SQL transaction to withdraw the money from one account and add it on the other in a safe way
+	if(sprintf(query, "START TRANSACTION") < 0){ 
+		return INTERNAL_ERROR;
+	}
+
+	if((result = executeQuery(query)) != RETURN_SUCCESS){
+		return MYSQL_QUERY_ERROR;
+	}
+	
+	// create a temporary variable in SQL to store the old balance of the sender's account; that's required, since the money will only be withdrawn if there's enough money available on the account
+	if(sprintf(query, "SELECT @old_balance := BALANCE FROM accounts WHERE ACCOUNT_NUMBER = '%d'", transaction->sender_account->account_number) < 0){ 
+		return INTERNAL_ERROR;
+	}
+
+	if(executeQueryReply(query) == NULL){
+		return MYSQL_QUERY_ERROR;
+	}
+	mysql_free_result(query_res);
+	memset(query, 0, 90);
+	
+	// withdraw if there's enough money, otherwise leave the money untouched
+	if(sprintf(query, "UPDATE accounts SET BALANCE = CASE WHEN @old_balance >= '%f' THEN '%f' ELSE @old_balance END WHERE ACCOUNT_NUMBER = '%d'",
+		transaction->amount, transaction->sender_account->balance - transaction->amount, transaction->sender_account->account_number) < 0){ 
+		return INTERNAL_ERROR;
+	}
+
+	if((result = executeQuery(query)) != RETURN_SUCCESS){
+		return result;
+	}
+	memset(query, 0, 150);
+	
+	// add the money on the receiver account, if and only if it was withdrawn from the other account before (same conditional for both operations, withdraw and add)
+	if(sprintf(query, "UPDATE accounts SET BALANCE = CASE WHEN @old_balance >= '%f' THEN '%f' ELSE @old_balance END WHERE ACCOUNT_NUMBER = '%d'",
+		transaction->amount, transaction->recipient_account->balance + transaction->amount, transaction->recipient_account->account_number) < 0){ 
+		return INTERNAL_ERROR;
+	}
+
+	if((result = executeQuery(query)) != RETURN_SUCCESS){
+		return result;
+	}
+	memset(query, 0, 150);
+	
+	// finish the transaction
+	if(sprintf(query, "COMMIT") < 0){ 
+		return INTERNAL_ERROR;
+	}
+
+	if((result = executeQuery(query)) != RETURN_SUCCESS){
+		return result;
+	}
+	
+	return RETURN_SUCCESS;
+}
+
+
+
+
+
+
+//-------------------------------------------------------------------------- File Parser ------------------------------------------------------------------------
 
 
 /**
@@ -77,11 +550,15 @@ int copyTrimmedString(char *source, char *destination, short destinationMaxSize)
  *               success followed by the values of SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, TAN, separated
  *               by a space character
 **/
-int parseFile(const char *path) {
-	int path_length = 0;
+int parseFile(const char *path, transaction_info *transaction) {
+	// check if parameter is NULL
+	if(path == NULL || transaction == NULL){
+		return PARAMETER_ERROR;
+	}
 	
 	// file to read from
 	FILE *textfile = NULL;
+	int path_length = 0;
 	
 	// buffers to store the file content
 	char sender[16] = {0};
@@ -91,14 +568,7 @@ int parseFile(const char *path) {
 	
 	// check if system had enough memory available
 	if(sender == NULL || recipient == NULL || tan == NULL || amount == NULL){
-		printf("%d", MEMORY_ERROR);
 		return MEMORY_ERROR;
-	}
-	
-	// check if path is NULL
-	if(path == NULL){
-		printf("%d", PARAMETER_ERROR);
-		return PARAMETER_ERROR;
 	}
 	
 	// check if path is NULL terminated
@@ -108,12 +578,10 @@ int parseFile(const char *path) {
 	
 	// if path is not correctly terminated, calling fopen would result in an overflow
 	if(path_length == FILENAME_MAX){
-		printf("%d", PARAMETER_ERROR);
 		return PARAMETER_ERROR;
 	}
 	
 	if((textfile = fopen(path, "r")) == NULL){
-		printf("%d", IO_ACCESS_ERROR);
 		return IO_ACCESS_ERROR;
 	}
 	else{
@@ -159,14 +627,12 @@ int parseFile(const char *path) {
 				if(stringLength < 0){
 					// an error has occured during the extraction of information from the processed line
 					fclose(textfile);
-					printf("%d", IO_READ_ERROR);
 					return IO_READ_ERROR;
 				}
 				else if(stringLength == 1){
 					// only a NULL terminal has been copied => the line doesn't contain any information after a
 					// promising keyword (e.g. SENDER_ACCOUNT)
 					fclose(textfile);
-					printf("%d", FILE_FORMAT_ERROR);
 					return FILE_FORMAT_ERROR;
 				}
 			}
@@ -175,7 +641,6 @@ int parseFile(const char *path) {
 		// check if all four strings have been set to a value 
 		if(*sender == 0 || *recipient == 0 || *amount == 0 || *tan == 0){
 			fclose(textfile);
-			printf("%d", FILE_FORMAT_ERROR);
 			return FILE_FORMAT_ERROR;
 		}
 		
@@ -190,14 +655,12 @@ int parseFile(const char *path) {
 		lng_sender = strtoul(sender, NULL, 10);
 		if(lng_sender == 0 || lng_sender > INT_MAX){
 			fclose(textfile);
-			printf("%d", FILE_FORMAT_ERROR);
 			return FILE_FORMAT_ERROR;
 		}
 		
 		lng_recipient = strtoul(recipient, NULL, 10);
 		if(lng_recipient == 0 || lng_recipient > INT_MAX){
 			fclose(textfile);
-			printf("%d", FILE_FORMAT_ERROR);
 			return FILE_FORMAT_ERROR;
 		}
 		
@@ -205,11 +668,17 @@ int parseFile(const char *path) {
 		dbl_amount = strtod(amount, NULL);
 		if(dbl_amount == 0.0 || dbl_amount == HUGE_VAL || dbl_amount == -HUGE_VAL){
 			fclose(textfile);
-			printf("%d", FILE_FORMAT_ERROR);
 			return FILE_FORMAT_ERROR;
 		}
+		
+		
+		transaction->sender_account = getAccount((int) lng_sender);
+		transaction->recipient_account = getAccount((int) lng_recipient);
+		transaction->amount = dbl_amount;
+		transaction->tan = (char *) malloc(16);
+		memcpy(transaction->tan, tan, 16);
 	
-		printf("%d %d %d %.2f %s\n", RETURN_SUCCESS, (int) lng_sender, (int) lng_recipient, (float) dbl_amount, tan);
+		//printf("%d %d %d %.2f %s\n", RETURN_SUCCESS, (int) transaction->sender_account->account_number, (int) transaction->recipient_account->account_number, (float) transaction->amount, transaction->tan);
 		
 		fclose(textfile);
 		return RETURN_SUCCESS;
@@ -219,17 +688,92 @@ int parseFile(const char *path) {
 
 
 /**
- * Function that is called first when the program is executed. The program expects one argument, that is the path to the file
- * that contains the transaction details. Return value is the value returned from parseFile(...) or -1 if the number of arguments
- * provided is wrong
+ * Function that is called first when the program is executed. The program expects 4 arguments:
+ *
+ * ./file_parser <some/path/to/the/file.txt> <db_user> <db_password> <db_name> 
+ *
 **/
 int main(int argc, char **argv){
-	if(argc == 2){
-		const char *path = argv[1];
-		return parseFile(path);
-	}
-	else{
-		printf("%d", PARAMETER_ERROR);
+	int result = 0;
+	
+	if(argc != 5){
+		printf("%d\n", PARAMETER_ERROR);
 		return PARAMETER_ERROR;
 	}
+	
+	// mysql != NULL indicates that the program is already running
+	if(mysql != NULL){
+		printf("%d\n", INTERNAL_ERROR);
+		return INTERNAL_ERROR;
+	}
+	
+	// get the arguments
+	const char *path = argv[1];
+	db_user = argv[2];
+	db_password = argv[3];
+	db_name = argv[4];
+	
+	// reserve memory for the new transaction
+	transaction_info *transaction = (transaction_info *) malloc(sizeof(transaction_info));
+	if(transaction == NULL){
+		printf("%d\n", MEMORY_ERROR);
+		return MEMORY_ERROR;
+	}
+	
+	// connect to the database
+	result = mysqlConnect();
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	result = mysqlSelectDB();
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	
+	// read the file
+	result = parseFile(path, transaction);
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	
+	// check for obvious errors
+	if(transaction->sender_account == NULL || transaction->recipient_account == NULL){
+		printf("%d\n", ACCOUNT_NOT_FOUND);
+		return ACCOUNT_NOT_FOUND;
+	}
+	
+	// perform the transaction
+	result = transferMoney(transaction);
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	
+	// update the TAN status in the database
+	result = updateTANStatus(transaction->tan);
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	
+	// safe the transaction
+	result = registerTransaction(transaction);
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	
+	// close database connection
+	result = mysqlCloseConnection();
+	if(result != RETURN_SUCCESS){
+		printf("%d\n", result);
+		return result;
+	}
+	
+	// exit
+	printf("%d\n", RETURN_SUCCESS);
+	return RETURN_SUCCESS;
 }

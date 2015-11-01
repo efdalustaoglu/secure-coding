@@ -12,8 +12,26 @@ function getTransactions() {
 
 // gets a single transaction
 function getSingleTransaction($id) {
-  $transaction = selectTransaction();
+  $transaction = selectTransaction($id);
   return $transaction;
+}
+
+function transferAmount($sender,$recipient,$amount) {
+  //TODO: be persistent about sender_account
+  $sender_account = getAccountByAccId($sender); //I think a getAccountByAccId() is needed (?)
+  $new_balance = ($sender_account->BALANCE - $amount); 
+  $remove = updateBalance($sender_account->ACCOUNT_NUMBER, $new_balance);
+
+  //2. method: continue attempt to transfer money
+  while (!$remove_amount) {
+    $remove_amount = updateBalance($sender_account->ACCOUNT_NUMBER, $new_balance);
+  }
+  $recipient_account = getAccountByAccId($recipient); //I think a getAccountByAccId() is needed (?)
+  $new_balance = ($recipient_account->BALANCE + $amount); 
+  $add_amount = updateBalance($recipient_account->ACCOUNT_NUMBER, $new_balance);
+  while (!$add_amount) {
+    $add_amount = updateBalance($recipient_account->ACCOUNT_NUMBER, $new_balance);
+  }
 }
 
 
@@ -50,7 +68,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     $return->msg = "Bad Request: Malformed TAN";
     return $return;
   }
-  $sender_account = selectAccount($sender); //I think a selectAccount() is needed (?)
+  $sender_account = getAccountByAccNumber($sender); //I think a getAccountByAccNumber() is needed (?)
   if (!$sender_account) {
     $return->value = false;
     $return->msg = "Not Found: Sender account";
@@ -60,8 +78,8 @@ function createTransaction($sender, $recipient, $amount, $tan) {
       $return->msg = "Bad Request: Amount to be transferred greater than balance";
       return $return;
   }
-  $rec_account = selectAccount($recipient);
-  if ($rec_account) {
+  $rec_account = getAccountByAccNumber($recipient);
+  if (!$rec_account) {
     $return->value = false;
     $return->msg = "Not Found: Recipient account";
     return $return;
@@ -72,17 +90,26 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     $return->msg = "Invalid TAN";
     return $return;
   } else {
-    if ($tan_record->CLIENT_ACCOUNT != $sender || strcmp($tan_record[4],"V")) {
+    if ($tan_record->CLIENT_ACCOUNT != $sender_account->ID || strcmp($tan_record->STATUS,"V")) {
       $return->value = false;
       $return->msg = "Invalid TAN";
       return $return;
     }
   }
-  $action = insertTransaction($sender,$recipient,$amount,$tan_record[0]);
+  $invalidate_tan = updateTanStatus($tan_record->ID,"I");
+  if (!$invalidate_tan) {
+    $return->value = false;
+    $return->msg = "Transaction failed";
+    return $return;
+  }
+  $action = insertTransaction($sender_account->ID,$rec_account->ID,$amount,$tan_record->ID);
   if (!$action) {
     $return->value = false;
     $return->msg = "Transaction failed";
     return $return;
+  }
+  if ($amount < 10000) {
+    transferAmount($sender_account->ID,$rec_account->ID,$amount);
   }
   $return->value = true;
   $return->msg = "Transaction successful";
@@ -90,25 +117,32 @@ function createTransaction($sender, $recipient, $amount, $tan) {
 }
 
 // approve / deny a transaction
-function approveTransaction($id, $approver, $decison) {
+function approveTransaction($id, $approver, $decision, $transaction) { //reasons for $transaction explained on view_transaction.php
   $return  = returnValue();
   if (!filter_var($id, FILTER_VALIDATE_INT) or $id < 1) {
     $return->value = false;
     $return->msg = "Invalid transaction id.";
     return $return;
   }
-  $user_record = selectUSer($id);
+  $user_record = selectUser($approver);
   if (!$user_record || $user_record->USER_TYPE != "E") {
     $return->value = false;
     $return->msg = "Invalid approver";
     return $return;
   }
-  $approve = updateTransactionApproval($id, $approver, $decison);
+  $new_status = ($decision == true) ? "D" : "A";
+  $approve = updateTransactionApproval($id, $approver, $new_status);
   if (!$approve) {
     $return->value = false;
     $return->msg = "Transaction update failed";
     return $return;
   }
+
+  $amount = $transaction->AMOUNT;
+  $sender = $transaction->SENDER_ACCOUNT;
+  $recipient = $transaction->RECIPIENT_ACCOUNT;
+  transferAmount($sender,$recipient,$amount);
+  
   $return->value = true;
   $return->msg = "Transaction update successful";
   return $return;
@@ -120,4 +154,3 @@ function parseTransactionFile($path, $sender) {
 }
 
 ?>
-

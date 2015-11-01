@@ -3,6 +3,24 @@ define('BANK_APP', TRUE);
 require_once "../app/user.php";
 require_once "../app/transaction.php";
 startSession(true);
+if (isset($_GET['download'])) {
+  $download = $_GET['download'];
+  if (download == true) {
+    $pdf = generatePDF(getAuthUser()->userid);
+    return $pdf;
+
+    $file_name = $_SERVER['PATH_INFO'];
+$file = '/path/to/pdf/files' . $file_name;
+if (file_exists($file)) {
+    header('Content-Type: application/pdf');
+    header('Content-Disposition: attachment;filename="' . basename($file_name) . '"');
+    header('Content-Length: ' . filesize($file));
+    readfile($file);
+} else {
+    header('HTTP/1.1 404 Not Found');
+}
+  }
+}
 $transactions = getTransactions(true);
 // include header
 $pageTitle = "View Transactions";
@@ -48,6 +66,11 @@ include("header.php");
   <?php endforeach; ?>
   </tbody>
 </table>
+
+<p>
+  <a class="pure-button pure-button-primary" href="view_transactions.php?download=true">Download Transactions</a>
+</p>
+
 
 <?php if(getAuthUser()->usertype == "E"): ?> 
   <h3>View All Transactions</h3>

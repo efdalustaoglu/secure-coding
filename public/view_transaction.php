@@ -6,7 +6,7 @@ startSession(true);
 // get single transaction
 if (isset($_GET['id'])) {
   $id = $_GET['id'];
-  $transaction = getSingleTransaction($id);
+  $transaction = getSingleTransaction($id,true);
 }
 // process form
 if (isset($_POST['approve']) || isset($_POST['deny'])) {
@@ -18,7 +18,7 @@ if (isset($_POST['approve']) || isset($_POST['deny'])) {
     $showMsg = $approval->msg;
   }
   //On my browser, after a transaction update, the displayed data weren't refreshed, so I included the following:
-  $transaction = getSingleTransaction($id);
+  $transaction = getSingleTransaction($id,true);
 }
 // include header
 $pageTitle = "View Transaction";
@@ -71,7 +71,7 @@ include("header.php");
 
     <div class="pure-controls">
       <input type="hidden" name="transactionid" value="<?php echo $transaction->ID?>" />
-      <?php if ($transaction->STATUS == "P") : ?>
+      <?php if ($transaction->STATUS == "P" and getAuthUser()->usertype == "E") : ?>
       <button type="submit" name="approve" class="pure-button button-success">Approve</button>
       <button type="submit" name="deny" class="pure-button button-error">Deny</button>
       <?php endif; ?>

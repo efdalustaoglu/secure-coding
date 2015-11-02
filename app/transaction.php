@@ -110,6 +110,13 @@ function approveTransaction($id, $approver, $decision) {
     return $return;
   }
 
+  $senderAccount = selectAccountById($transaction->SENDER_ACCOUNT);
+  if ($senderAccount->BALANCE < $transaction->AMOUNT) {
+    $return->value = false;
+    $return->msg = "Insufficient funds";
+    return $return;
+  }
+
   $approve = updateTransactionApproval($id, $approver, $decision);
   if (!$approve) {
     $return->value = false;

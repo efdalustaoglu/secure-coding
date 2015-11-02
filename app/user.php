@@ -296,36 +296,5 @@ function sendEmail($email, $name, $subject, $body) {
   return true;
 }
 
-// generate PDF file
-function generatePDF($userId){
-  require('../FPDF/fpdf.php');
-  $pdf = new FPDF();//create the instance
-  $pdf->AddPage();
-  $pdf->SetFont('Helvetica','B',18);//set the font style
-
-  
-  $transactions = getTransactions(true);
-  $account = getAccountByUId($userId);
-  $pdf->SetFont('Helvetica','B',11);
-  $pdf->Cell(79, 10, "#  Created On  Sender  Recipient  Amount  Status  Tan  Approved By  Approved On");
-  $pdf->Ln(10);
-  foreach($transactions as $transaction) {
-    if($account->ACCOUNT_NUMBER == $transaction->SENDER_ACCOUNT) {
-      if ($transaction->STATUS === "A") $status = "Approved"; 
-      else if ($transaction->STATUS === "D") $status = "Declined"; 
-      else $status = "Pending";
-      $pdf->SetFont('Helvetica','B',11);
-      $pdf->Cell(90, 10, "$transaction->ID $transaction->DATE_CREATED $transaction->SENDER_ACCOUNT $transaction->RECIPIENT_ACCOUNT $transaction->AMOUNT $status $transaction->TAN_ID $transaction->APPROVED_BY $transaction->DATE_APPROVED");
-      $pdf->SetFont('Helvetica','',15);
-      //$pdf->Cell(0,10," $tan->TAN_NUMBER");
-      $pdf->Ln(10);
-    }
-  }
-  //$pdf->Output();//print the pdf file to the screen
-  
-  $doc = $pdf->Output('transactions.pdf', 'D');//Save the pdf file 
-  return $doc;
-}
-
 
 ?>

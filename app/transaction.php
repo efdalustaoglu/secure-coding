@@ -10,8 +10,8 @@ function getTransactions() {
 }
 
 // gets filtered transactions
-function getTransactionsByUserId($id) {
-  return selectTransactionsByUserId($id);
+function getTransactionsByAccountId($id) {
+  return selectTransactionsByAccountId($id);
 }
 
 // gets a single transaction
@@ -151,6 +151,59 @@ function uploadTransactionFile() {
   $return->value = $filename;
   $return->msg = "Upload successful";
   return $return;
+}
+
+// generate PDF file
+function generatePDF($accountId){
+  $transactions = selectTransactionsByAccountId($accountId);  
+  $userId = selectAccountById($accountId)->USER;
+  $user = selectUser($userId);
+
+  require('FPDF/fpdf.php');
+  $pdf = new FPDF();
+
+  // Column headings
+  $header = array("Created On", "Sender", "Recipient", "Amount", "Status", "TAN", "Approved By", "Approved On");
+
+  // Column widths
+  $w = array(23, 26, 26, 30, 20, 40, 42, 23);
+
+  $pdf->AddPage("L");
+  $pdf->SetFont('Arial','B', 12);
+  $pdf->Cell(0, 10, "Transaction Summary: ".$user->FIRST_NAME." ".$user->LAST_NAME);
+  $pdf->Ln();
+  $pdf->SetFont('Arial','', 10);
+
+  for ($i=0; $i < count($header); $i++) {
+    $pdf->Cell($w[$i], 7, $header[$i], 1, 0, 'C');
+  }
+  $pdf->Ln();
+
+  // Data
+  foreach($transactions as $row) {
+    $status = "Pending";
+    if ($row->STATUS === "A") {
+      $status = "Approved"; 
+    } else if ($row->STATUS === "D") {
+      $status = "Declined"; 
+    }
+
+    $pdf->Cell($w[0], 6, $row->DATE_CREATED, 'LR');
+    $pdf->Cell($w[1], 6, $row->SENDER_ACCOUNT_NUM, 'LR');
+    $pdf->Cell($w[2], 6, $row->RECIPIENT_ACCOUNT_NUM, 'LR');
+    $pdf->Cell($w[3], 6, number_format($row->AMOUNT), 'LR', 0, 'R');
+    $pdf->Cell($w[4], 6, $status, 'LR');
+    $pdf->Cell($w[5], 6, $row->TAN_NUMBER, 'LR');
+    $pdf->Cell($w[6], 6, $row->APPROVED_BY_NAME, 'LR');
+    $pdf->Cell($w[7], 6, $row->DATE_APPROVED, 'LR');
+    $pdf->Ln();
+  }
+
+  // Closing line
+  $pdf->Cell(array_sum($w), 0, '', 'T');
+  
+  $doc = $pdf->Output('transactions.pdf', 'D');//Save the pdf file 
+  return $doc;
 }
 
 ?>

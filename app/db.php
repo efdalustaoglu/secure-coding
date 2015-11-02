@@ -150,7 +150,7 @@ function selectTransactions() {
 }
 
 // select a user's transactions
-function selectTransactionsByUserId($id) {
+function selectTransactionsByAccountId($id) {
   $connection = openDb();
   $id = (int) $id;
   $sql = "SELECT * FROM transaction_view WHERE SENDER_ACCOUNT = $id OR RECIPIENT_ACCOUNT = $id";

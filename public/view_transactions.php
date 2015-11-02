@@ -6,25 +6,28 @@ require_once "../app/transaction.php";
 
 startSession(true);
 
-if (isset($_GET['download'])) {
-  $download = $_GET['download'];
-  if (download == true) {
-    $pdf = generatePDF(getAuthUser()->userid);
-    return $pdf;
-  }
-}
+//generatePDF(8);
+
+$showDownload = "";
 
 // if the logged in user is not an employee
 if (getAuthUser()->usertype === 'C') {
   $accountId = getAccountByUserId(getAuthUser()->userid)->ID;
-  $transactions = getTransactionsByUserId($accountId);
+  $transactions = getTransactionsByAccountId($accountId);
+  $showDownload = "?download=1";
 } else {
   if (isset($_GET['id']) && $_GET['id'] > 0) {
     $accountId = getAccountByUserId($_GET['id'])->ID;
-    $transactions = getTransactionsByUserId($accountId);
+    $transactions = getTransactionsByAccountId($accountId);
+    $showDownload = "?id=".$_GET['id']."&download=1";
   } else {
     $transactions = getTransactions();
   }
+}
+
+if (isset($_GET['download'])) {
+  $download = $_GET['download'];
+  $pdf = generatePDF($accountId);
 }
 
 $users = getUsers();
@@ -36,8 +39,11 @@ include("header.php");
 
 <p>
   <a class="pure-button pure-button-primary" href="create_transaction.php">New Transaction</a>
-  <a class="pure-button pure-button-primary" href="view_transactions.php?download=true">Download Transactions</a>
+  <?php if ($showDownload !== ""): ?>
+  <a class="pure-button pure-button-primary" href="view_transactions.php<?php echo $showDownload; ?>">Download Transactions</a>
+<?php endif; ?>
 
+  <?php if(getAuthUser()->usertype == "E"): ?> 
   <form class="pure-form" method="get" action="<?php $_SERVER['PHP_SELF']; ?>">
    <fieldset>
       <select name="id">
@@ -51,9 +57,9 @@ include("header.php");
       <button type="submit" class="pure-button pure-button-primary">Select</button>
   </fieldset>
 </form>
+<?php endif; ?>
 </p>
 
-<?php if(getAuthUser()->usertype == "E"): ?> 
   <h3>View All Transactions</h3>
   <table class="pure-table pure-table-bordered">
     <thead>
@@ -87,7 +93,6 @@ include("header.php");
     <?php endforeach; ?>
     </tbody>
   </table>
-<?php endif ?>
 
 <?php 
 // include footer

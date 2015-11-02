@@ -18,13 +18,25 @@ require_once "../app/user.php";
     padding: 15px;
   }
 
+  table {
+    width: 100%;
+  }
+
   .container {
-    width: 1000px;
+    width: 1200px;
     margin: 0 auto;
   }
 
   .pull-right {
     float: right;
+  }
+
+  .pull-left {
+    float: left;
+  }
+
+  .clear {
+    clear: both;
   }
 
   .divider {

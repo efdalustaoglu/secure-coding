@@ -37,30 +37,32 @@ $pageTitle = "View Transactions";
 include("header.php");
 ?>
 
-<p>
+<div class="pull-left">
   <a class="pure-button pure-button-primary" href="create_transaction.php">New Transaction</a>
   <?php if ($showDownload !== ""): ?>
-  <a class="pure-button pure-button-primary" href="view_transactions.php<?php echo $showDownload; ?>">Download Transactions</a>
-<?php endif; ?>
-
+    <a class="pure-button pure-button-primary" href="view_transactions.php<?php echo $showDownload; ?>">Download Transactions</a>
+  <?php endif; ?>
+</div>
+<div class="pull-right">
   <?php if(getAuthUser()->usertype == "E"): ?> 
   <form class="pure-form" method="get" action="<?php $_SERVER['PHP_SELF']; ?>">
-   <fieldset>
-      <select name="id">
-        <option value="0">All Users</option>
-        <?php foreach($users as $user): ?>
-        <option value="<?php echo $user->ID; ?>" <?php if (isset($_GET['id']) && $_GET['id'] === $user->ID) { echo "selected"; }?>>
-          <?php echo $user->FIRST_NAME." ".$user->LAST_NAME; ?>
-        </option>
-        <?php endforeach; ?>
-      </select>
-      <button type="submit" class="pure-button pure-button-primary">Select</button>
-  </fieldset>
-</form>
-<?php endif; ?>
-</p>
+     <fieldset>
+        <select name="id">
+          <option value="0">All Users</option>
+          <?php foreach($users as $user): ?>
+          <option value="<?php echo $user->ID; ?>" <?php if (isset($_GET['id']) && $_GET['id'] === $user->ID) { echo "selected"; }?>>
+            <?php echo $user->FIRST_NAME." ".$user->LAST_NAME; ?>
+          </option>
+          <?php endforeach; ?>
+        </select>
+        <button type="submit" class="pure-button pure-button-primary">Select</button>
+    </fieldset>
+  </form>
+  <?php endif; ?>
+</div>
+<div class="clear"></div>
 
-  <h3>View All Transactions</h3>
+  <h3>View Transactions</h3>
   <table class="pure-table pure-table-bordered">
     <thead>
       <tr>

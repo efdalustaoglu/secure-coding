@@ -49,7 +49,7 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Amount</label>
-      <span><?php echo number_format($transaction->AMOUNT); ?></span>
+      <span><?php echo number_format($transaction->AMOUNT, 2, ".", ","); ?></span>
     </div>
 
     <div class="pure-control-group">

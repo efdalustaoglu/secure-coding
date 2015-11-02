@@ -31,11 +31,18 @@ if (isset($_POST['upload'])) {
   if ($upload->value) {
     // execute C program
     $program = realpath("../app/file_parser");
-    $argument = realpath("./uploads/".$upload->value);
-    $command = $program." ".$argument;
+    $program_directory = substr($program, 0, strrpos($program, "/"));
+    chdir($program_directory);
+    $command = "./file_parser ".$upload->value." ".DB_USER." ".DB_PASSWORD." ".DB_NAME;
     $output = shell_exec($command);
+    unlink($upload->value);
+    
+    if ((int)$output === 0) {
+		$showMsg = "Transaction successful";
+	} else {
+		$showMsg = "Transaction failed with error code: ".$output;
+	}
 
-    // parse output to determine success or failure
   } else {
     $showMsg = $upload->msg;
   }

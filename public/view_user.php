@@ -69,7 +69,7 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Balance</label>
-      <span><?php echo number_format($user->BALANCE); ?></span>
+      <span><?php echo number_format($user->BALANCE, 2, ".", ","); ?></span>
     </div>
 
     <div class="pure-control-group">

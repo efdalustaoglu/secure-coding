@@ -85,7 +85,7 @@ include("header.php");
         <td><?php echo $transaction->DATE_CREATED; ?></td>
         <td><?php echo $transaction->SENDER_ACCOUNT_NUM; ?></td>
         <td><?php echo $transaction->RECIPIENT_ACCOUNT_NUM; ?></td>
-        <td><?php echo number_format($transaction->AMOUNT); ?></td>
+        <td><?php echo number_format($transaction->AMOUNT, 2, ".", ","); ?></td>
         <td><?php if ($transaction->STATUS === "A") echo "Approved"; else if ($transaction->STATUS === "D") echo "Declined"; else echo "Pending"; ?></td>
         <td><?php echo $transaction->TAN_NUMBER; //TAN NUMBER ? ?></td>
         <td><?php echo $transaction->APPROVED_BY_NAME; ?></td>

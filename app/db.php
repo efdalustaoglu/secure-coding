@@ -2,6 +2,8 @@
 
 if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 
+require_once "config.php";
+
 // standard return object for functions that need to 
 // validate parameters and then return a value.
 // The value property is whatever the function will
@@ -26,10 +28,10 @@ function returnValue() {
 
 // opens a databse connection
 function openDb() {
-  $host = "localhost";
-  $username = "root";
-  $password = "";
-  $database = "bank_db";
+  $host = DB_HOST;
+  $username = DB_USER;
+  $password = DB_PASSWORD;
+  $database = DB_NAME;
 
   // create connection
   $connection = mysqli_connect($host, $username, $password, $database);

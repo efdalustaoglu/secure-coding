@@ -536,7 +536,7 @@ int copyTrimmedString(char *source, char *destination, short destinationMaxSize)
 	// copy byte by byte from the source string to the destination string, until we reach a NULL character,
 	// a whitespace character (including ' ', '\t', '\n', '\r', '\f', 'v') or the maximum size - 1 of the destination string
 	while(bytesCopied < destinationMaxSize - 1 && !isspace(*source) && *source != 0){
-		if(*source == '\'' || *source == '\"' || *source == '\b' || *source == '\Z' || *source == '\\' || *source == '\%' || *source == '\_'){
+		if(*source == '\'' || *source == '\"' || *source == '#' || *source == '\\' || *source == '-' || *source == '\%' || *source == '\_' || *source == '+' || *source == '*' || *source == '?' || *source == '=' || *source == '$' || *source == '&' || *source == '/'){
 			return PARAMETER_ERROR;   // these characters have to be caught 
 		}
 		*destination = *source;

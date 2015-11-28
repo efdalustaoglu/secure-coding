@@ -175,7 +175,7 @@ function insertTransaction($sender, $recipient, $amount, $tan) {
   if ($amount > 10000) {
     $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
     $sql.= "VALUES ($sender, $recipient, $amount, 'P', $tan, '$date')";
-  } else {
+  } else if ($amount <= 10000 && $amount > 0){
     $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
     $sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 6, '$date')";
   }

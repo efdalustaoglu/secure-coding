@@ -104,6 +104,12 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
     return $return;
   }
 
+  if ( cleanInput($firstname) || cleanInput($lastname) || cleanInput($password) || cleanInput($confirmPassword) ) {
+    $return->value = false;
+    $return->msg = "Invalid user type";
+    return $return;
+  }
+
   // check if usertype is among valid values
   if ($userType !== "E" && $userType !== "C") {
     $return->value = false;
@@ -295,6 +301,16 @@ function sendEmail($email, $name, $subject, $body) {
 
   return true;
 }
+
+
+function cleanInput($inputString){
+  $inputString = htmlspecialchars($inputString, ENT_QUOTES);
+  if (preg_match("/[^A-Za-z0-9]/", $inputString)){
+    return false;
+  }
+  return true;
+}
+
 
 
 ?>

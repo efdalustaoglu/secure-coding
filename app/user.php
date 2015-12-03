@@ -98,6 +98,18 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
     return $return;
   }
 
+  //Whitelist name/surname fields
+  if (preg_match('/[^A-Za-z\']/',$firstname)) {
+    $return->value = false;
+    $return->msg = "Invalid credentials";
+    return $return;
+  } 
+  if (preg_match('/[^A-Za-z\']/',$lastname)) {
+    $return->value = false;
+    $return->msg = "Invalid credentials";
+    return $return;
+  } 
+
   // validate email format
   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $return->value = false;

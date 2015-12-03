@@ -23,6 +23,14 @@ function getSingleTransaction($id) {
 // creates a transaction
 function createTransaction($sender, $recipient, $amount, $tan) {
   $return = returnValue();
+  //if (gettype($recipient) != "integer" && gettype($recipient) != "double") {
+
+  //Whitelisting recipient
+  if (!is_numeric($recipient)) {
+    $return->value = false;
+    $return->msg = "Invalid recipient"; 
+    return $return;
+  }
   
   if ($recipient == $sender) {
     $return->value = false;
@@ -30,11 +38,18 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     return $return;
   }
 
+  //Whitelisting amount 
   if (!is_numeric($amount)) {
     $return->value = false;
     $return->msg = "Amount must be a number";
     return $return;
   }
+  //Whitelisting TAN
+  if (empty($tan) or preg_match('/[^A-Z0-9]/',$tan)) {
+    $return->value = false;
+    $return->msg = "Invalid TAN";
+    return $return;
+  } 
 
   $recipientAccount = selectAccountByNumber($recipient);
   if (!$recipientAccount) {

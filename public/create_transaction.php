@@ -12,6 +12,7 @@ if (isset($_POST['submit'])) {
   $recipient = $_POST['recipient'];
   $amount = $_POST['amount'];
   $tan = $_POST['tan'];
+  get_db_credentials(getAuthUser()->usertype);
   $sender = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
   
   $transaction = createTransaction($sender, $recipient, $amount, $tan);

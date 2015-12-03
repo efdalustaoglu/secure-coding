@@ -5,6 +5,7 @@ require_once "../app/transaction.php";
 
 
 startSession(true);
+get_db_credentials(getAuthUser()->usertype);
 
 //generatePDF(8);
 

@@ -4,6 +4,7 @@ require_once "../app/user.php";
 require_once "../app/transaction.php";
 
 startSession(true);
+get_db_credentials(getAuthUser()->usertype);
 
 // process form
 if (isset($_POST['approve']) || isset($_POST['deny'])) {

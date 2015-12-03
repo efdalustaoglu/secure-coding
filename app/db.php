@@ -2,7 +2,7 @@
 
 if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 
-require_once "config.php";
+require_once "config.sample.php";
 
 // standard return object for functions that need to 
 // validate parameters and then return a value.
@@ -49,10 +49,66 @@ function closeDb(&$connection) {
   mysqli_close($connection);
 }
 
+
+function bind_array($stmt,&$row) {
+  $md = $stmt->result_metadata();
+  $params = array();
+  while($field = $md->fetch_field()) {
+    $params[] = &$row[$field->name];
+  }
+  call_user_func_array(array($stmt, 'bind_result'),$params);
+}
+
+// execute query that does not return a recordset
+function executeNonQuery(&$stmt, &$connection) {
+
+  //Using prepared statements and parameterized queries:
+  $result = $stmt->execute();
+  $stmt->close();
+
+  //$result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
+  closeDb($connection);
+  // as a non select query, it won't return a mysqli result set
+  // it returns true or false depending on success or failure
+  return $result;
+}
+
+
+function executeQueryPrepared(&$stmt, &$connection, $findFirst = false) {
+  $resultSet = array();
+  $row = array();
+  if($stmt->execute()) {
+    bind_array($stmt,$row);
+    //$result = $stmt->get_result();
+
+    while ($stmt->fetch()) {
+      $res = array();
+      foreach($row as $key => $value) {
+        $res[$key] = $value;
+      }
+      $resultSet[] = (object) $res;
+    }
+    //while ($row = $result->fetch_array(MYSQLI_NUM)) {
+    //  $resultSet[] = (object) $row;
+    //}
+
+    $stmt->close();
+    closeDb($connection);
+    // return the first result only. useful when query for just 
+    // a single record
+    if ($findFirst) {
+      $resultSet = (count($resultSet) > 0) ? $resultSet[0] : null; 
+    } 
+  }
+  return $resultSet;
+}
+
+
+
+
 // execute query that returns a recordset
 function executeQuery($sql, &$connection, $findFirst = false) {
   $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
-
   $resultSet = array();
   while ($row = mysqli_fetch_assoc($result)) {
     $resultSet[] = (object) $row;
@@ -69,17 +125,18 @@ function executeQuery($sql, &$connection, $findFirst = false) {
 }
 
 // execute query that does not return a recordset
-function executeNonQuery($sql, &$connection) {
-  $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
-  closeDb($connection);
-
-  // as a non select query, it won't return a mysqli result set
-  // it returns true or false depending on success or failure
-  return $result;
-}
+//function executeNonQuery($sql, &$connection) {
+//
+//  $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
+//  closeDb($connection);
+//  // as a non select query, it won't return a mysqli result set
+//  // it returns true or false depending on success or failure
+//  return $result;
+//}
 
 function escape($value, &$connection) {
-  return mysqli_real_escape_string($connection, $value);
+  $value = mysqli_real_escape_string($connection, $value);
+  return $value;
 }
 
 // select all users
@@ -93,8 +150,20 @@ function selectUsers() {
 function selectUser($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "SELECT * FROM users_view WHERE ID = $id";
-  return executeQuery($sql, $connection, true);
+
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM users_view WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("i",$id);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+  //$sql = "SELECT * FROM users_view WHERE ID = $id";
+  //return executeQuery($sql, $connection, true);
 }
 
 // select a user by email and password
@@ -102,8 +171,20 @@ function selectByEmailAndPassword($email, $password) {
   $connection = openDb();
   $email = escape($email, $connection);
   $password = escape($password, $connection);
-  $sql = "SELECT * FROM users WHERE EMAIL = '$email' AND PASSWORD = '$password' AND DATE_APPROVED IS NOT NULL";
-  return executeQuery($sql, $connection, true);
+
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM users WHERE EMAIL = ? AND PASSWORD = ? AND DATE_APPROVED IS NOT NULL";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("ss",$email,$password);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+  //$sql = "SELECT * FROM users WHERE EMAIL = '$email' AND PASSWORD = '$password' AND DATE_APPROVED IS NOT NULL";
+  //return executeQuery($sql, $connection, true);
 }
 
 // insert into user table
@@ -116,9 +197,20 @@ function insertUser($userType, $email, $password, $firstname, $lastname) {
   $firstname = escape($firstname, $connection);
   $lastname = escape($lastname, $connection);
 
+  //Using prepared statements and parameterized queries:
   $sql = "INSERT INTO users (USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
-  $sql.= "VALUES ('$userType', '$email', '$password', '$firstname', '$lastname', '$date')";
-  return executeNonQuery($sql, $connection);
+  $sql.= "VALUES (?, ?, ?, ?, ?, ?)";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("ssssss",$userType,$email,$password,$firstname,$lastname,$date);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "INSERT INTO users (USER_TYPE, EMAIL, PASSWORD, FIRST_NAME, LAST_NAME, DATE_CREATED) ";
+  //$sql.= "VALUES ('$userType', '$email', '$password', '$firstname', '$lastname', '$date')";
+  //return executeNonQuery($sql, $connection);
 }
 
 // update user registration
@@ -132,16 +224,38 @@ function updateUserRegistration($id, $approver, $decision) {
     return deleteUserRegistration($id);
   }
 
-  $sql = "UPDATE users SET APPROVED_BY = $approver, DATE_APPROVED = '$date' WHERE ID = $id";
-  return executeNonQuery($sql, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "UPDATE users SET APPROVED_BY = ?, DATE_APPROVED = ? WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("ssi",$approver,$date,$id);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "UPDATE users SET APPROVED_BY = $approver, DATE_APPROVED = '$date' WHERE ID = $id";
+  //return executeNonQuery($sql, $connection);
 }
 
 // delete a rejected user registration
 function deleteUserRegistration($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "DELETE FROM users WHERE ID = ".$id;
-  return executeNonQuery($sql, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "DELETE FROM users WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("i",$id);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "DELETE FROM users WHERE ID = ".$id;
+  //return executeNonQuery($sql, $connection);
 }
 
 // select all transactions
@@ -155,16 +269,40 @@ function selectTransactions() {
 function selectTransactionsByAccountId($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "SELECT * FROM transaction_view WHERE SENDER_ACCOUNT = $id OR RECIPIENT_ACCOUNT = $id";
-  return executeQuery($sql, $connection);
+
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM transaction_view WHERE SENDER_ACCOUNT = ? OR RECIPIENT_ACCOUNT = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("si",$id,$id);
+
+  return executeQueryPrepared($stmt, $connection);
+
+
+  //$sql = "SELECT * FROM transaction_view WHERE SENDER_ACCOUNT = $id OR RECIPIENT_ACCOUNT = $id";
+  //return executeQuery($sql, $connection);
 }
 
 // select single transactions
 function selectTransaction($id) {
   $connection = openDb();
   $id = (int) $id;
-  $sql = "SELECT * FROM transaction_view WHERE ID = $id";
-  return executeQuery($sql, $connection, true);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM transaction_view WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("i",$id);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+  //$sql = "SELECT * FROM transaction_view WHERE ID = $id";
+  //return executeQuery($sql, $connection, true);
 }
 
 // insert into transactions table
@@ -173,13 +311,36 @@ function insertTransaction($sender, $recipient, $amount, $tan) {
   $date = date('Y-m-d');
 
   if ($amount > 10000) {
+
+    //Using prepared statements and parameterized queries:
     $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
-    $sql.= "VALUES ($sender, $recipient, $amount, 'P', $tan, '$date')";
-  } else if ($amount <= 10000 && $amount > 0){
+    $sql.= "VALUES (?, ?, ?, 'P', ?, ?)";
+    $stmt = $connection->stmt_init();
+    if(!$stmt->prepare($sql)) {
+      return false;
+    }
+    $stmt->bind_param("iidss",$sender,$recipient,$amount,$tan,$date);
+
+
+    //$sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
+    //$sql.= "VALUES ($sender, $recipient, $amount, 'P', $tan, '$date')";
+  } else {
+
+    //Using prepared statements and parameterized queries:
     $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
-    $sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 6, '$date')";
+    $sql.= "VALUES (?, ?, ?, 'A', ?, ?, 6, ?)";
+    $stmt = $connection->stmt_init();
+    if(!$stmt->prepare($sql)) {
+      return false;
+    }
+    $stmt->bind_param("iidsss",$sender,$recipient,$amount,$tan,$date,$date);
+
+    //$sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
+    //$sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 6, '$date')";
   }
-  return executeNonQuery($sql, $connection);
+
+  return executeNonQuery($stmt, $connection);
+  //return executeNonQuery($sql, $connection);
 }
 
 //Update account balance of the sender/recipient during a transaction
@@ -191,16 +352,38 @@ function updateBalance($sender, $recipient, $amount) {
   $newRecipientbalance = $recipientBalance + $amount;
 
   $connection = openDb();
-  $sql = "UPDATE accounts SET BALANCE = $newSenderBalance WHERE ID = $sender";
 
-  if (!executeNonQuery($sql, $connection)) {
+  //Using prepared statements and parameterized queries:
+  $sql = "UPDATE accounts SET BALANCE = ? WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
     return false;
-  } 
+  }
+  $stmt->bind_param("di",$newSenderBalance,$sender);
+
+  if (!executeNonQuery($stmt, $connection)) {
+    return false;
+  }
+
+  //$sql = "UPDATE accounts SET BALANCE = $newSenderBalance WHERE ID = $sender";
+  //if (!executeNonQuery($sql, $connection)) {
+  //  return false;
+  //} 
 
   $connection = openDb();
-  $sql = "UPDATE accounts SET BALANCE = $newRecipientbalance WHERE ID = $recipient";
-  
-  return executeNonQuery($sql, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "UPDATE accounts SET BALANCE = ? WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("ss",$newRecipientbalance,$recipient);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "UPDATE accounts SET BALANCE = $newRecipientbalance WHERE ID = $recipient";
+  //return executeNonQuery($sql, $connection);
 }
 
 // update transaction approval
@@ -208,8 +391,19 @@ function updateTransactionApproval($id, $approver, $decision) {
   // $decision = A / D / P. Approved, Denied, Pending
   $connection = openDb();
   $date = date('Y-m-d');
-  $sql = "UPDATE transactions SET APPROVED_BY = $approver, DATE_APPROVED = '$date', STATUS = '$decision' WHERE id = $id";
-  return executeNonQuery($sql, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "UPDATE transactions SET APPROVED_BY = ?, DATE_APPROVED = ?, STATUS = ? WHERE id = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("ssss",$approver,$date,$decision,$id);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "UPDATE transactions SET APPROVED_BY = $approver, DATE_APPROVED = '$date', STATUS = '$decision' WHERE id = $id";
+  //return executeNonQuery($sql, $connection);
 }
 
 // insert new tans
@@ -218,38 +412,97 @@ function insertTan($tan, $client) {
   $connection = openDb();
   $date = date('Y-m-d');
 
+  //Using prepared statements and parameterized queries:
   $sql = "INSERT INTO tans(TAN_NUMBER, CLIENT_ACCOUNT, DATE_CREATED, STATUS) ";
-  $sql.= "VALUES ('$tan', $client, '$date', 'V')";
-  return executeNonQuery($sql, $connection);
+  $sql.= "VALUES (?, ?, ?, 'V')";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("sss",$tan,$client,$date);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "INSERT INTO tans(TAN_NUMBER, CLIENT_ACCOUNT, DATE_CREATED, STATUS) ";
+  //$sql.= "VALUES ('$tan', $client, '$date', 'V')";
+  //return executeNonQuery($sql, $connection);
 }
 
 // update tan
 function updateTanStatus($tanId) {
   // possible values = U / V. Used, Valid.
   $connection = openDb();
-  $sql = "UPDATE tans SET STATUS = 'U' WHERE ID = $tanId";
-  return executeNonQuery($sql, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "UPDATE tans SET STATUS = 'U' WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("s",$tanId);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "UPDATE tans SET STATUS = 'U' WHERE ID = $tanId";
+  //return executeNonQuery($sql, $connection);
 }
 
 // select tan by tan
 function selectTanByTan($tan) {
   $connection = openDb();
-  $sql = "SELECT * FROM tans WHERE TAN_NUMBER = '$tan'";
-  return executeQuery($sql, $connection, true);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM tans WHERE TAN_NUMBER = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("s",$tan);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+
+  //$sql = "SELECT * FROM tans WHERE TAN_NUMBER = '$tan'";
+  //return executeQuery($sql, $connection, true);
 }
 
-// select tan by tan ID
-function selectSingleTan($tan) {
-  $connection = openDb();
-  $sql = "SELECT * FROM tans WHERE ID = $id";
-  return executeQuery($sql, $connection, true);
-}
+// select tan by tan ID <-------- NOT USED ?
+//function selectSingleTan($tan) {
+//  $connection = openDb();
+//
+//  ////Using prepared statements and parameterized queries:
+//  //$sql = "SELECT * FROM tans ID = ?";
+//  //$stmt = $connection->stmt_init();
+//  //if(!$stmt->prepare($sql)) {
+//  //  return false;
+//  //}
+//  //$stmt->bind_param("s",$id);
+//
+//  //return executeQueryPrepared($stmt, $connection, true);
+//
+//
+//
+//  $sql = "SELECT * FROM tans WHERE ID = $id";
+//  echo $sql;
+//  return executeQuery($sql, $connection, true);
+//}
 
 // select tans by user ID
 function selectTansByUserId($id) {
   $connection = openDb();
-  $sql = "SELECT * FROM tans WHERE CLIENT_ACCOUNT = $id";
-  return executeQuery($sql, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM tans WHERE CLIENT_ACCOUNT = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("i",$id);
+
+  return executeQueryPrepared($stmt, $connection);
+
+  //$sql = "SELECT * FROM tans WHERE CLIENT_ACCOUNT = $id";
+  //return executeQuery($sql, $connection);
 }
 
 // insert user account
@@ -257,30 +510,84 @@ function insertAccount($userid, $accountNumber) {
   $connection = openDb();
   $date = date('Y-m-d');
 
+  //Using prepared statements and parameterized queries:
   $sql = "INSERT INTO accounts(USER, ACCOUNT_NUMBER, DATE_CREATED) ";
-  $sql.= "VALUES ($userid, $accountNumber, '$date')";
-  return executeNonQuery($sql, $connection);
+  $sql.= "VALUES (?, ?, ?)";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("sss",$userid,$accountNumber,$date);
+
+  return executeNonQuery($stmt, $connection);
+
+  //$sql = "INSERT INTO accounts(USER, ACCOUNT_NUMBER, DATE_CREATED) ";
+  //$sql.= "VALUES ($userid, $accountNumber, '$date')";
+  //return executeNonQuery($sql, $connection);
 }
 
 // select account account by account number
 function selectAccountByNumber($accountNumber) {
   $connection = openDb();
-  $sql = "SELECT * FROM accounts WHERE ACCOUNT_NUMBER = $accountNumber";
-  return executeQuery($sql, $connection, true);
+
+
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM accounts WHERE ACCOUNT_NUMBER = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("s",$accountNumber);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+
+  //$sql = "SELECT * FROM accounts WHERE ACCOUNT_NUMBER = $accountNumber";
+  //return executeQuery($sql, $connection, true);
 }
 
 // select account account by user id
 function selectAccountByUserId($id) {
   $connection = openDb();
-  $sql = "SELECT * FROM accounts WHERE USER = $id";
-  return executeQuery($sql, $connection, true);
+  $id = escape($id,$connection);
+  $id = (int) $id;
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM accounts WHERE USER = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("i",$id);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+  //$sql = "SELECT * FROM accounts WHERE USER = $id";
+  //echo "select account by user id: " . $sql;
+  //return executeQuery($sql, $connection, true);
 }
 
 // select account account by user id
 function selectAccountById($id) {
   $connection = openDb();
-  $sql = "SELECT * FROM accounts WHERE ID = $id";
-  return executeQuery($sql, $connection, true);
+
+  //Using prepared statements:
+  $id = (int) $id;
+  $sql = "SELECT * FROM accounts WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("i",$id);
+
+  return executeQueryPrepared($stmt, $connection, true);
+
+
+
+  //$sql = "SELECT * FROM accounts WHERE ID = $id";
+  ////echo "select account by id: " . $sql;
+  //return executeQuery($sql, $connection, true);
 }
 
 ?>

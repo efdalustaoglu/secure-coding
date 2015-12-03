@@ -52,6 +52,7 @@ function getAuthUser() {
 // logs in user
 function login($email, $password) {
   $return  = returnValue();
+  get_db_credentials('L');
 
   if (empty($email) || empty($password)) {
     $return->value = false;
@@ -104,12 +105,6 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
     return $return;
   }
 
-  if ( cleanInput($firstname) || cleanInput($lastname) || cleanInput($password) || cleanInput($confirmPassword) ) {
-    $return->value = false;
-    $return->msg = "Invalid user type";
-    return $return;
-  }
-
   // check if usertype is among valid values
   if ($userType !== "E" && $userType !== "C") {
     $return->value = false;
@@ -125,6 +120,7 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
   }
 
   $password = md5($password);
+  get_db_credentials('R');
   $insert = insertUser($userType, $email, $password, $firstname, $lastname);
 
   // check if db operation failed
@@ -141,17 +137,20 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
 
 // gets all users in the databse
 function getUsers() {
+  get_db_credentials(getAuthUser()->usertype);
   return selectUsers();
 }
 
 // gets a single user from the db
 function getSingleUser($id) {
+  get_db_credentials(getAuthUser()->usertype);
   return selectUser($id);
 }
 
 // approves a user registration
 function approveRegistration($id, $approver, $decision) {
   $return = returnValue();
+  get_db_credentials(getAuthUser()->usertype);
   $update = updateUserRegistration($id, $approver, $decision);
 
   if (!$update) {
@@ -301,16 +300,6 @@ function sendEmail($email, $name, $subject, $body) {
 
   return true;
 }
-
-
-function cleanInput($inputString){
-  $inputString = htmlspecialchars($inputString, ENT_QUOTES);
-  if (preg_match("/[^A-Za-z0-9]/", $inputString)){
-    return false;
-  }
-  return true;
-}
-
 
 
 ?>

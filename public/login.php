@@ -11,7 +11,6 @@ if (isset($_POST['submit'])) {
   
   $login = login($email, $password);
   if ($login->value) {
-    session_regenerate_id();//CHANGE THE SESSION ID
     header("Location: "."view_transactions.php");
   } 
 

@@ -109,6 +109,8 @@ function createTransaction($sender, $recipient, $amount, $tan) {
 
 // approve / deny a transaction
 function approveTransaction($id, $approver, $decision) {
+  //Provisioning 4.4.3
+  privilegedUserAction();
   $return  = returnValue();
 
   $transaction = selectTransaction($id);

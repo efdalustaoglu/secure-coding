@@ -6,6 +6,9 @@ require_once "../app/user.php";
 
 startSession(true);
 
+//Provisioning 4.4.3
+privilegedUserAction();
+
 $users = getUsers();
 
 // include header

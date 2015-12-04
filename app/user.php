@@ -29,6 +29,8 @@ function startSession($privileged = false) {
 function checkAccess() {
   if (!isUserAuth()) {
     logout();
+    //Ensure user does not receive sensitive content 4.4.3
+    die("Unauthorized access");
   }
 }
 
@@ -159,8 +161,17 @@ function getSingleUser($id) {
   return selectUser($id);
 }
 
+
+//Provisioning 4.4.3
+function privilegedUserAction() {
+  if (getAuthUser()->usertype != 'E') {
+    die("Unauthorized access");
+  }
+}
+
 // approves a user registration
 function approveRegistration($id, $approver, $decision) {
+  privilegedUserAction();
   $return = returnValue();
   get_db_credentials(getAuthUser()->usertype);
   $update = updateUserRegistration($id, $approver, $decision);
@@ -275,6 +286,22 @@ function generateAccountNumber($id) {
 }
 
 function sendTanEmail($userId, $accountId) {
+  $tans = selectTansByUserId($accountId);
+  $user = selectUser($userId);
+  $email = $user->EMAIL;
+  $name = $user->FIRST_NAME . " " . $user->LAST_NAME;
+
+  $subject = "Tan Numbers - ".$name;
+  $body = "";
+
+  for ($i = 0; $i < count($tans); $i++) {
+    $body .= ($i + 1).". ".$tans[$i]->TAN_NUMBER."<br/>" ;
+  }
+
+  return sendEmail($email, $name, $subject, $body);
+}
+
+function sendRegistrationEmail($userId) {
   $tans = selectTansByUserId($accountId);
   $user = selectUser($userId);
   $email = $user->EMAIL;

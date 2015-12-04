@@ -4,6 +4,7 @@ require_once "../app/user.php";
 require_once "../app/transaction.php";
 
 startSession(true);
+//SQL: Get credentials for user group
 get_db_credentials(getAuthUser()->usertype);
 
 // process form
@@ -30,6 +31,13 @@ include("header.php");
 ?>
 
 <?php if (isset($transaction) && $transaction): ?>
+
+<?php //Ensure user is authorized to see transaction 4.4.3
+  $account = getAccountByUserId(getAuthUser()->userid)->ID;
+  if (getAuthUser()->usertype != 'E' && $transaction->SENDER_ACCOUNT != $account && $transaction->RECIPIENT_ACCOUNT != $account) {
+    die("Unauthorized access");
+  } ?>
+
 <h3>View Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
   <fieldset>

@@ -21,8 +21,11 @@ if (isset($_POST['approve']) || isset($_POST['deny'])) {
 
 // get single transaction
 if (isset($_GET['id'])) {
-  $id = $_GET['id'];
-  $transaction = getSingleTransaction($id);
+  $id = (int) $_GET['id'];
+  //4.8.1
+  if (is_numeric($id)) {
+    $transaction = getSingleTransaction($id);
+  }
 }
 
 // include header

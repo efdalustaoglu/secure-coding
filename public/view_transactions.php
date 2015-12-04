@@ -17,8 +17,9 @@ if (getAuthUser()->usertype === 'C') {
   $transactions = getTransactionsByAccountId($accountId);
   $showDownload = "?download=1";
 } else {
-  if (isset($_GET['id']) && $_GET['id'] > 0) {
-    $accountId = getAccountByUserId($_GET['id'])->ID;
+  //4.8.1
+  if (isset($_GET['id']) && is_numeric((int) $_GET['id']) && ((int) $_GET['id']) > 0) {
+    $accountId = getAccountByUserId((int) $_GET['id'])->ID;
     $transactions = getTransactionsByAccountId($accountId);
     $showDownload = "?id=".$_GET['id']."&download=1";
   } else {

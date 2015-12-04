@@ -5,6 +5,12 @@ if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 require_once "db.php";
 require_once "transaction.php";
 
+//CSRF token
+function create_CSRF_token() {
+    $data['CSRF_token'] = md5(uniqid(rand(), true));
+    $_SESSION['CSRF_token'] = $data['CSRF_token'];
+}
+
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
   startSession();

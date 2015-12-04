@@ -6,11 +6,17 @@ require_once "../app/user.php";
 
 startSession(true);
 
+//CSRF
+if (!isset($_POST['approve']) && !isset($_POST['reject'])) {
+  create_CSRF_token();
+}
+
 // process form
-if (isset($_POST['approve']) || isset($_POST['reject'])) {
+if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['CSRF_token']) && $_POST['CSRF_token'] == $_SESSION['CSRF_token']) {
   $id = $_POST['userid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
+  unset($_SESSION['CSRF_token']);
   $approval = approveRegistration($id, $approver, $decision);
 
   if (!empty($approval->msg)) {
@@ -40,6 +46,7 @@ include("header.php");
 <?php if ($user): ?>
 <h3>View User</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+  <input type="hidden" name="CSRF_token" id="CSRF_token" value="<?php echo $_SESSION['CSRF_token'] ?>" />
   <fieldset>
     <div class="pure-control-group">
       <label>Created On</label>

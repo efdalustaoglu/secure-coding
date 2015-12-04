@@ -7,12 +7,13 @@ require_once "../app/transaction.php";
 
 startSession(true);
 
+//CSRF
 if (!isset($_POST['submit']) && !isset($_POST['upload'])) {
   create_CSRF_token();
 }
 
 // process form
-if (isset($_POST['submit']) && $_POST['CSRF_token'] == $_SESSION['CSRF_token']) {
+if (isset($_POST['submit']) && isset($_SESSION['CSRF_token']) && $_POST['CSRF_token'] == $_SESSION['CSRF_token']) {
   $recipient = $_POST['recipient'];
   $amount = $_POST['amount'];
   $tan = $_POST['tan'];
@@ -21,7 +22,7 @@ if (isset($_POST['submit']) && $_POST['CSRF_token'] == $_SESSION['CSRF_token']) 
   
   $transaction = createTransaction($sender, $recipient, $amount, $tan);
   if ($transaction->value) {
-    create_CSRF_token();
+    unset($_SESSION['CSRF_token']);
     header("Location: "."view_transactions.php");
   } 
 

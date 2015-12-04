@@ -18,6 +18,14 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 // start session
 function startSession($privileged = false) {
   if (session_id() === '') {
+    $secure = false;
+    //$secure = true;
+    $httponly = true;
+    //ini_set('session.use_only_cookies',1);
+    $path = APP_PATH;
+    $domain = APP_DOMAIN;
+    //$domain = $_SERVER['SERVER_ADDR'];
+    session_set_cookie_params($cookieParams["lifetime"],$path,$domain,$secure,$httponly);
     session_start();
   }
 
@@ -174,6 +182,15 @@ function approveRegistration($id, $approver, $decision) {
   privilegedUserAction();
   $return = returnValue();
   get_db_credentials(getAuthUser()->usertype);
+
+  //Ensure that users are approved only once 4.6.3
+  $user = getSingleUser($id);
+  if ($user->APPROVED_BY != NULL) {
+    $return->value = false;
+    $return->msg = "Invalid action";
+    return $return;
+  }
+
   $update = updateUserRegistration($id, $approver, $decision);
 
   if (!$update) {

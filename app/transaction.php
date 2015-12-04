@@ -120,6 +120,13 @@ function approveTransaction($id, $approver, $decision) {
     return $return;
   }
 
+  //Ensure that only pending transactions are updated 4.6.3
+  if ($transaction->STATUS != 'P') {
+    $return->value = false;
+    $return->msg = "Invalid action";
+    return $return;
+  }
+
   $user = selectUser($approver);
   if (!$user || $user->USER_TYPE !== "E") {
     $return->value = false;

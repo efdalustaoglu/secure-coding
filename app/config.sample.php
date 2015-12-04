@@ -1,6 +1,8 @@
 <?php 
 
 if(!defined('BANK_APP')) { die('Direct access not permitted'); }
+define("APP_PATH", "/nikos/secure-coding");
+define("APP_DOMAIN", "localhost");
 
 // define constants
 define("DB_HOST", "localhost");

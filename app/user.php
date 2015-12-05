@@ -86,6 +86,22 @@ function logout () {
   header("Location: "."login.php");
 }
 
+// returns the password of the user
+function rememberPassword($email){
+  $return  = returnValue();
+    
+  // validate email format
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $return->value = false;
+    $return->msg = "Invalid email format";
+    return $return;
+  }
+  
+  $return->value = true;
+  $return->msg = "Your password successfully sent your e-mail address";
+  return $return;
+}
+
 // creates a user: employee or client
 function createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname) {
   $return  = returnValue();
@@ -276,7 +292,7 @@ function sendTanEmail($userId, $accountId) {
     $body .= ($i + 1).". ".$tans[$i]->TAN_NUMBER."<br/>" ;
   }
 
-  return sendEmail($email, $name, $subject, $body);
+  return sendEmailWithPDF($userId, $email, $name, $subject, $body);
 }
 
 function sendEmail($email, $name, $subject, $body) {
@@ -302,6 +318,78 @@ function sendEmail($email, $name, $subject, $body) {
   return true;
 }
 
+
+function sendEmailWithPDF($userId, $email, $name, $subject, $body){
+  require_once('PHPMailer/class.phpmailer.php');
+  $doc = generatePDF($userId);
+  $password = randomPassword();  
+  $mail = new PHPMailer(); 
+  $body="Requested Tan Numbers are attached to the e-mail..\n\n<br /><br />Password:$password";
+  $mail->CharSet = 'UTF-8';
+  $mail->SetFrom('Admin@secoding.com', 'SecureCodingTeam6');//Set the name as you like
+  $mail->SMTPAuth = true;
+  $mail->Host = "smtp.gmail.com"; // SMTP server
+  $mail->SMTPSecure = "ssl";
+  $mail->Username = "secoding6@gmail.com"; //account which you want to send mail from
+  $mail->Password = "efenikosmaltefdal"; //this is account's password
+  $mail->Port = "465";
+  $mail->isSMTP();
+  $user = getSingleUser($userId);
+  $mail->AddAddress($email, $name);
+  $mail->Subject = $subject;
+  $mail->MsgHTML($body);
+
+  $doc->SetProtection(array(), $password); 
+  $doc = $doc->Output('', 'S');//Save the pdf file
+
+  $mail->AddStringAttachment($doc, 'doc.pdf', 'base64', 'application/pdf');
+
+  if (!$mail->send()) {
+    return false;
+  }
+
+  return true;
+}
+
+
+
+/*
+  Generates the PDF file that is given by user ID, and returns the created PDF document
+*/
+function generatePDF($userId){
+  require('FPDF/fpdf_protection.php');
+  $pdf = new FPDF();//create the instance
+  $pdf->AddPage();
+  $pdf->SetFont('Helvetica','B',18);//set the font style
+  $pdf->Cell(75);//start 7.5 cm from right
+  $pdf->Cell(0,10,"Tan Numbers");//name the title
+  $pdf->SetFont('Helvetica','',15);
+  $pdf->Ln(15);//linebreak
+  $tans = getTansByUserId($userId);
+  $i = 0;
+  foreach ($tans as $tan) {
+    
+    $pdf->SetFont('Helvetica','B',15);
+    $pdf->Cell(15, 10, ($i+1) . " - )");
+    $pdf->SetFont('Helvetica','',15);
+    $pdf->Cell(0,10," $tan->TAN_NUMBER");
+    $pdf->Ln(10);
+    $i++;
+  }
+
+  return $doc2;
+}
+
+function randomPassword() {
+    $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+    $pass = array(); //remember to declare $pass as an array
+    $alphaLength = strlen($alphabet) - 1; //put the length -1 in cache
+    for ($i = 0; $i < 10; $i++) {
+        $n = rand(0, $alphaLength);
+        $pass[] = $alphabet[$n];
+    }
+    return implode($pass); //turn the array into a string
+}
 
 function cleanInput($inputString){
   $inputString = htmlspecialchars($inputString, ENT_QUOTES);

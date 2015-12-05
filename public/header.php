@@ -11,7 +11,8 @@ require_once "../app/user.php";
 <head>
   <title><?php echo $pageTitle; ?></title>
   <link rel="stylesheet" href="assets/css/pure-min.css">
-  
+  <script src='https://www.google.com/recaptcha/api.js'></script><!-- Google ReCaptcha -->
+
   <!-- css overwrite -->
   <style type="text/css">
   body {
@@ -102,6 +103,9 @@ require_once "../app/user.php";
         <li class="pure-menu-item">
           <a href="<?php echo 'register.php'; ?>" class="pure-menu-link">Register</a>
         </li>
+        <li class="pure-menu-item">
+          <a href="<?php echo 'forgot_password.php'; ?>" class="pure-menu-link">Forgot Password</a>
+        </li>        
       </ul>
       <?php endif; ?>
       </div>

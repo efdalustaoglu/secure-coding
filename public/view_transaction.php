@@ -5,13 +5,19 @@ require_once "../app/transaction.php";
 
 startSession(true);
 //SQL: Get credentials for user group
-get_db_credentials(getAuthUser()->usertype);
+getDBCredentials(getAuthUser()->usertype);
+//CSRF
+if (!isset($_POST['approve']) && !isset($_POST['deny'])) {
+  clearCSRFToken();
+  createCSRFToken('transaction');
+}
 
 // process form
-if (isset($_POST['approve']) || isset($_POST['deny'])) {
+if (isset($_POST['approve']) || isset($_POST['deny']) && isset($_SESSION['transactiontoken']) && $_POST['transactiontoken'] == $_SESSION['transactiontoken']) {
   $id = $_POST['transactionid'];
   $decision = (isset($_POST['approve'])) ? "A" : "D";
   $approver = getAuthUser()->userid;
+  unset($_SESSION['transactiontoken']);
   $approval = approveTransaction($id, $approver, $decision); 
   
   if (!empty($approval->msg)) {
@@ -43,6 +49,7 @@ include("header.php");
 
 <h3>View Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+  <input type="hidden" name="transactiontoken" id="transactiontoken" value="<?php echo $_SESSION['transactiontoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
       <label>Created On</label>

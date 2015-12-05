@@ -9,20 +9,21 @@ startSession(true);
 
 //CSRF
 if (!isset($_POST['submit']) && !isset($_POST['upload'])) {
-  create_CSRF_token();
+  clearCSRFToken();
+  createCSRFToken('newtransaction');
 }
 
 // process form
-if (isset($_POST['submit']) && isset($_SESSION['CSRF_token']) && $_POST['CSRF_token'] == $_SESSION['CSRF_token']) {
+if (isset($_POST['submit']) && isset($_SESSION['newtransactiontoken']) && $_POST['newtransactiontoken'] == $_SESSION['newtransactiontoken']) {
   $recipient = $_POST['recipient'];
   $amount = $_POST['amount'];
   $tan = $_POST['tan'];
-  get_db_credentials(getAuthUser()->usertype);
+  getDBCredentials(getAuthUser()->usertype);
   $sender = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
   
   $transaction = createTransaction($sender, $recipient, $amount, $tan);
   if ($transaction->value) {
-    unset($_SESSION['CSRF_token']);
+    unset($_SESSION['newtransactiontoken']);
     header("Location: "."view_transactions.php");
   } 
 
@@ -63,7 +64,7 @@ include("header.php");
 
 <h3>Create Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
-  <input type="hidden" name="CSRF_token" id="CSRF_token" value="<?php echo $_SESSION['CSRF_token'] ?>" />
+  <input type="hidden" name="newtransactiontoken" id="newtransactiontoken" value="<?php echo $_SESSION['newtransactiontoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
       <label>Recipient Account</label>

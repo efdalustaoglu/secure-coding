@@ -8,15 +8,16 @@ startSession(true);
 
 //CSRF
 if (!isset($_POST['approve']) && !isset($_POST['reject'])) {
-  create_CSRF_token();
+  clearCSRFToken();
+  createCSRFToken('user');
 }
 
 // process form
-if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['CSRF_token']) && $_POST['CSRF_token'] == $_SESSION['CSRF_token']) {
+if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['usertoken']) && $_POST['usertoken'] == $_SESSION['usertoken']) {
   $id = $_POST['userid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
-  unset($_SESSION['CSRF_token']);
+  unset($_SESSION['usertoken']);
   $approval = approveRegistration($id, $approver, $decision);
 
   if (!empty($approval->msg)) {
@@ -46,7 +47,7 @@ include("header.php");
 <?php if ($user): ?>
 <h3>View User</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
-  <input type="hidden" name="CSRF_token" id="CSRF_token" value="<?php echo $_SESSION['CSRF_token'] ?>" />
+  <input type="hidden" name="usertoken" id="usertoken" value="<?php echo $_SESSION['usertoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
       <label>Created On</label>

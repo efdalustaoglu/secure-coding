@@ -6,9 +6,21 @@ require_once "db.php";
 require_once "transaction.php";
 
 //CSRF token
-function create_CSRF_token() {
-    $data['CSRF_token'] = md5(uniqid(rand(), true));
-    $_SESSION['CSRF_token'] = $data['CSRF_token'];
+function createCSRFToken($action) {
+    $data[$action . 'token'] = md5(uniqid(rand(), true));
+    $_SESSION[$action . 'token'] = $data[$action . 'token'];
+}
+
+function clearCSRFToken() {
+  if (isset($_SESSION['usertoken'])) {
+    unset($_SESSION['usertoken']);
+  }
+  if (isset($_SESSION['transactiontoken'])) {
+    unset($_SESSION['transactiontoken']);
+  }
+  if (isset($_SESSION['newtransactiontoken'])) {
+    unset($_SESSION['newtransactiontoken']);
+  }
 }
 
 // set session variables
@@ -68,7 +80,7 @@ function getAuthUser() {
 // logs in user
 function login($email, $password) {
   $return  = returnValue();
-  get_db_credentials('L');
+  getDBCredentials('L');
 
   if (empty($email) || empty($password)) {
     $return->value = false;
@@ -148,7 +160,7 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
   }
 
   $password = md5($password);
-  get_db_credentials('R');
+  getDBCredentials('R');
   $insert = insertUser($userType, $email, $password, $firstname, $lastname);
 
   // check if db operation failed
@@ -165,13 +177,13 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
 
 // gets all users in the databse
 function getUsers() {
-  get_db_credentials(getAuthUser()->usertype);
+  getDBCredentials(getAuthUser()->usertype);
   return selectUsers();
 }
 
 // gets a single user from the db
 function getSingleUser($id) {
-  get_db_credentials(getAuthUser()->usertype);
+  getDBCredentials(getAuthUser()->usertype);
   return selectUser($id);
 }
 
@@ -187,7 +199,7 @@ function privilegedUserAction() {
 function approveRegistration($id, $approver, $decision) {
   privilegedUserAction();
   $return = returnValue();
-  get_db_credentials(getAuthUser()->usertype);
+  getDBCredentials(getAuthUser()->usertype);
 
   //Ensure that users are approved only once 4.6.3
   $user = getSingleUser($id);

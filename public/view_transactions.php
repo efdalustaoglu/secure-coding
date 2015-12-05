@@ -5,7 +5,8 @@ require_once "../app/transaction.php";
 
 
 startSession(true);
-get_db_credentials(getAuthUser()->usertype);
+getDBCredentials(getAuthUser()->usertype);
+clearCSRFToken();
 
 //generatePDF(8);
 

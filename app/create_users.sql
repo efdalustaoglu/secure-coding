@@ -1,4 +1,3 @@
---Change passwords
 CREATE USER 'client'@'localhost' IDENTIFIED BY 'client';
 GRANT SELECT ON bank_db.* TO 'client'@'localhost';
 GRANT INSERT ON bank_db.transactions TO 'client'@'localhost';

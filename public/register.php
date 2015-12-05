@@ -65,6 +65,9 @@ include("header.php");
     <div class="pure-controls">
       <button type="submit" name="submit" class="pure-button pure-button-primary">Submit</button>
     </div>
+
+    <div class="g-recaptcha" data-sitekey="6Ldi-BETAAAAAN_yWLFXc-M6_9YNj5K141pNpI4t"></div>
+    
   </fieldset>
 </form>
 

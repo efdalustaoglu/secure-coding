@@ -171,7 +171,7 @@ function uploadTransactionFile() {
   $return = returnValue();
   $filename = basename($_FILES["file"]["name"]);
   $target_dir = "../app/";
-  $target_file = $target_dir . $filename;
+  $target_file = $target_dir . "batchfile";
 
   //Reject files that are not txt
   if ($_FILES["file"]["type"] != "text/plain") {
@@ -194,7 +194,7 @@ function uploadTransactionFile() {
     return $return;
   }
 
-  $return->value = $filename;
+  $return->value = "batchfile";
   $return->msg = "Upload successful";
   return $return;
 }

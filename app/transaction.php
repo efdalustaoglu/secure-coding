@@ -173,9 +173,24 @@ function uploadTransactionFile() {
   $target_dir = "../app/";
   $target_file = $target_dir . $filename;
 
+  //Reject files that are not txt
+  if ($_FILES["file"]["type"] != "text/plain") {
+    $return->value = false;
+    $return->msg = "Invalid file type";
+    return $return;
+  }
+
   if (!move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
     $return->value = false;
     $return->msg = "Upload failed";
+    return $return;
+  }
+  //Reject files that are not text/plain
+  $type = mime_content_type($target_file);
+  if ($type != "text/plain") {
+    $return->value = false;
+    $return->msg = "Invalid file type";
+    unlink($target_file);
     return $return;
   }
 
@@ -238,4 +253,5 @@ function generatePDF($accountId){
 }
 
 ?>
+
 

@@ -52,23 +52,38 @@ include("header.php");
   <input type="hidden" name="transactiontoken" id="transactiontoken" value="<?php echo $_SESSION['transactiontoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
-      <label>Created On</label>
-      <span><?php echo $transaction->DATE_CREATED; ?></span>
+      <label>Sender Name</label>
+      <span><?php echo $transaction->SENDER_NAME; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Sender</label>
+      <label>Sender Account</label>
       <span><?php echo $transaction->SENDER_ACCOUNT_NUM; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Recipient</label>
+      <label>Recipient Name</label>
+      <span><?php echo $transaction->RECIPIENT_NAME; ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Recipient Account</label>
       <span><?php echo $transaction->RECIPIENT_ACCOUNT_NUM; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Amount</label>
       <span><?php echo number_format($transaction->AMOUNT, 2, ".", ","); ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Description</label>
+      <span><?php echo $transaction->DESCRIPTION; ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Created On</label>
+      <span><?php echo $transaction->DATE_CREATED; ?></span>
     </div>
 
     <div class="pure-control-group">

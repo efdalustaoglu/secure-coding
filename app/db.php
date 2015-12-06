@@ -306,20 +306,20 @@ function selectTransaction($id) {
 }
 
 // insert into transactions table
-function insertTransaction($sender, $recipient, $amount, $tan) {
+function insertTransaction($sender, $recipient, $amount, $description, $tan) {
   $connection = openDb();
   $date = date('Y-m-d');
 
   if ($amount > 10000) {
 
     //Using prepared statements and parameterized queries:
-    $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
-    $sql.= "VALUES (?, ?, ?, 'P', ?, ?)";
+    $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, DESCRIPTION, STATUS, TAN_ID, DATE_CREATED) ";
+    $sql.= "VALUES (?, ?, ?, ?, 'P', ?, ?)";
     $stmt = $connection->stmt_init();
     if(!$stmt->prepare($sql)) {
       return false;
     }
-    $stmt->bind_param("iidss",$sender,$recipient,$amount,$tan,$date);
+    $stmt->bind_param("iidsss",$sender,$recipient,$amount,$description,$tan,$date);
 
 
     //$sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED) ";
@@ -327,13 +327,13 @@ function insertTransaction($sender, $recipient, $amount, $tan) {
   } else {
 
     //Using prepared statements and parameterized queries:
-    $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
-    $sql.= "VALUES (?, ?, ?, 'A', ?, ?, 6, ?)";
+    $sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, DESCRIPTION, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
+    $sql.= "VALUES (?, ?, ?, ?, 'A', ?, ?, 6, ?)";
     $stmt = $connection->stmt_init();
     if(!$stmt->prepare($sql)) {
       return false;
     }
-    $stmt->bind_param("iidsss",$sender,$recipient,$amount,$tan,$date,$date);
+    $stmt->bind_param("iidssss",$sender,$recipient,$amount,$description,$tan,$date,$date);
 
     //$sql = "INSERT INTO transactions (SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, STATUS, TAN_ID, DATE_CREATED, APPROVED_BY, DATE_APPROVED) ";
     //$sql.= "VALUES ($sender, $recipient, $amount, 'A', $tan, '$date', 6, '$date')";

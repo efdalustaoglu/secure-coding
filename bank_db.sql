@@ -1,6 +1,6 @@
 -- MySQL dump 10.13  Distrib 5.6.17, for Win64 (x86_64)
 --
--- Host: localhost    Database: bank_db
+-- Host: localhost    Database: bank_db1
 -- ------------------------------------------------------
 -- Server version	5.6.17
 
@@ -88,6 +88,7 @@ SET character_set_client = utf8;
   `SENDER_ACCOUNT` tinyint NOT NULL,
   `RECIPIENT_ACCOUNT` tinyint NOT NULL,
   `AMOUNT` tinyint NOT NULL,
+  `DESCRIPTION` tinyint NOT NULL,
   `STATUS` tinyint NOT NULL,
   `DATE_CREATED` tinyint NOT NULL,
   `APPROVED_BY` tinyint NOT NULL,
@@ -113,6 +114,7 @@ CREATE TABLE `transactions` (
   `SENDER_ACCOUNT` int(11) NOT NULL,
   `RECIPIENT_ACCOUNT` int(11) NOT NULL,
   `AMOUNT` double NOT NULL,
+  `DESCRIPTION` varchar(100) NOT NULL,
   `STATUS` varchar(1) NOT NULL,
   `TAN_ID` int(11) NOT NULL,
   `APPROVED_BY` int(11) DEFAULT NULL,
@@ -136,7 +138,7 @@ CREATE TABLE `transactions` (
 
 LOCK TABLES `transactions` WRITE;
 /*!40000 ALTER TABLE `transactions` DISABLE KEYS */;
-INSERT INTO `transactions` VALUES (6,1,3,905,'A',104,6,'2015-11-01','2015-11-01'),(8,1,3,25000,'A',106,7,'2015-11-02','2015-11-01');
+INSERT INTO `transactions` VALUES (6,1,3,905,'Rent deposit','A',104,6,'2015-11-01','2015-11-01'),(8,1,3,25000,'Rent deposit','A',106,7,'2015-11-02','2015-11-01');
 /*!40000 ALTER TABLE `transactions` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -209,7 +211,7 @@ SET character_set_client = @saved_cs_client;
 /*!50001 SET collation_connection      = utf8_general_ci */;
 /*!50001 CREATE ALGORITHM=UNDEFINED */
 /*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
-/*!50001 VIEW `transaction_view` AS select `t`.`ID` AS `ID`,`t`.`SENDER_ACCOUNT` AS `SENDER_ACCOUNT`,`t`.`RECIPIENT_ACCOUNT` AS `RECIPIENT_ACCOUNT`,`t`.`AMOUNT` AS `AMOUNT`,`t`.`STATUS` AS `STATUS`,`t`.`DATE_CREATED` AS `DATE_CREATED`,`t`.`APPROVED_BY` AS `APPROVED_BY`,`t`.`DATE_APPROVED` AS `DATE_APPROVED`,`t`.`TAN_ID` AS `TAN_ID`,`ta`.`STATUS` AS `TAN_STATUS`,`ta`.`TAN_NUMBER` AS `TAN_NUMBER`,`a1`.`ACCOUNT_NUMBER` AS `SENDER_ACCOUNT_NUM`,`a2`.`ACCOUNT_NUMBER` AS `RECIPIENT_ACCOUNT_NUM`,concat(`u`.`FIRST_NAME`,' ',`u`.`LAST_NAME`) AS `APPROVED_BY_NAME` from ((((`transactions` `t` join `tans` `ta` on((`t`.`TAN_ID` = `ta`.`ID`))) join `accounts` `a1` on((`a1`.`ID` = `t`.`SENDER_ACCOUNT`))) join `accounts` `a2` on((`a2`.`ID` = `t`.`RECIPIENT_ACCOUNT`))) left join `users` `u` on((`u`.`ID` = `t`.`APPROVED_BY`))) */;
+/*!50001 VIEW `transaction_view` AS select `t`.`ID` AS `ID`,`t`.`SENDER_ACCOUNT` AS `SENDER_ACCOUNT`,`t`.`RECIPIENT_ACCOUNT` AS `RECIPIENT_ACCOUNT`,`t`.`AMOUNT` AS `AMOUNT`,`t`.`DESCRIPTION` AS `DESCRIPTION`,`t`.`STATUS` AS `STATUS`,`t`.`DATE_CREATED` AS `DATE_CREATED`,`t`.`APPROVED_BY` AS `APPROVED_BY`,`t`.`DATE_APPROVED` AS `DATE_APPROVED`,`t`.`TAN_ID` AS `TAN_ID`,`ta`.`STATUS` AS `TAN_STATUS`,`ta`.`TAN_NUMBER` AS `TAN_NUMBER`,`a1`.`ACCOUNT_NUMBER` AS `SENDER_ACCOUNT_NUM`,`a2`.`ACCOUNT_NUMBER` AS `RECIPIENT_ACCOUNT_NUM`,concat(`u`.`FIRST_NAME`,' ',`u`.`LAST_NAME`) AS `APPROVED_BY_NAME`, concat(`u1`.`FIRST_NAME`,' ',`u1`.`LAST_NAME`) AS `SENDER_NAME`, concat(`u2`.`FIRST_NAME`,' ',`u2`.`LAST_NAME`) AS `RECIPIENT_NAME` from ((((`transactions` `t` join `tans` `ta` on((`t`.`TAN_ID` = `ta`.`ID`))) join `accounts` `a1` on((`a1`.`ID` = `t`.`SENDER_ACCOUNT`))) join `accounts` `a2` on((`a2`.`ID` = `t`.`RECIPIENT_ACCOUNT`))) left join `users` `u` on((`u`.`ID` = `t`.`APPROVED_BY`)) left join `users` `u1` on((`u1`.`ID` = `a1`.`USER`)) left join `users` `u2` on((`u2`.`ID` = `a2`.`USER`)))*/;
 /*!50001 SET character_set_client      = @saved_cs_client */;
 /*!50001 SET character_set_results     = @saved_cs_results */;
 /*!50001 SET collation_connection      = @saved_col_connection */;
@@ -243,3 +245,21 @@ SET character_set_client = @saved_cs_client;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2015-11-02  0:13:29
+
+
+CREATE USER 'client'@'localhost' IDENTIFIED BY 'client';
+GRANT SELECT ON bank_db.* TO 'client'@'localhost';
+GRANT INSERT ON bank_db.transactions TO 'client'@'localhost';
+GRANT UPDATE ON bank_db.tans TO 'client'@'localhost';
+GRANT UPDATE ON bank_db.accounts TO 'client'@'localhost';
+
+CREATE USER 'login'@'localhost' IDENTIFIED BY 'login';
+GRANT SELECT ON bank_db.users TO 'login'@'localhost';
+
+CREATE USER 'register'@'localhost' IDENTIFIED BY 'register';
+GRANT INSERT ON bank_db.users TO 'register'@'localhost';
+
+CREATE USER 'employee'@'localhost' IDENTIFIED BY 'employee';
+GRANT SELECT, INSERT, UPDATE ON bank_db.* TO 'employee'@'localhost';
+GRANT DELETE ON bank_db.users TO 'employee'@'localhost';
+

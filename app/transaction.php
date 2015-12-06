@@ -21,7 +21,7 @@ function getSingleTransaction($id) {
 
 
 // creates a transaction
-function createTransaction($sender, $recipient, $amount, $tan) {
+function createTransaction($sender, $recipient, $amount, $description, $tan) {
   $return = returnValue();
   //if (gettype($recipient) != "integer" && gettype($recipient) != "double") {
 
@@ -48,6 +48,13 @@ function createTransaction($sender, $recipient, $amount, $tan) {
   if (empty($tan) or preg_match('/[^A-Z0-9]/',$tan)) {
     $return->value = false;
     $return->msg = "Invalid TAN";
+    return $return;
+  } 
+
+  //Whitelisting Description
+  if (preg_match('/[^A-Za-z0-9\'\.\/\, ]/',$description)) {
+    $return->value = false;
+    $return->msg = 'Description may only contain letters, digits, and the special characters ".", ",", and "/"';
     return $return;
   } 
 
@@ -85,7 +92,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     return $return;
   }
 
-  $insert = insertTransaction($senderAccount->ID, $recipientAccount->ID, $amount, $tanEntry->ID);
+  $insert = insertTransaction($senderAccount->ID, $recipientAccount->ID, $amount, $description, $tanEntry->ID);
   if (!$insert) {
     $return->value = false;
     $return->msg = "Transaction failed";

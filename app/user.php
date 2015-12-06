@@ -129,12 +129,12 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
   //Whitelist name/surname fields
   if (preg_match('/[^A-Za-z\']/',$firstname)) {
     $return->value = false;
-    $return->msg = "Invalid credentials";
+    $return->msg = "Invalid First Name";
     return $return;
   } 
   if (preg_match('/[^A-Za-z\']/',$lastname)) {
     $return->value = false;
-    $return->msg = "Invalid credentials";
+    $return->msg = "Invalid Last Name";
     return $return;
   } 
 
@@ -377,3 +377,4 @@ function sendEmail($email, $name, $subject, $body) {
 
 
 ?>
+ 

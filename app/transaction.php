@@ -169,9 +169,10 @@ function approveTransaction($id, $approver, $decision) {
 // upload transaction file
 function uploadTransactionFile() {
   $return = returnValue();
-  $filename = basename($_FILES["file"]["name"]);
+  //$filename = basename($_FILES["file"]["name"]);
+  $filename = "batchfile";
   $target_dir = "../app/";
-  $target_file = $target_dir . "batchfile";
+  $target_file = $target_dir . $filename;
 
   //Reject files that are not txt
   if ($_FILES["file"]["type"] != "text/plain") {
@@ -194,7 +195,7 @@ function uploadTransactionFile() {
     return $return;
   }
 
-  $return->value = "batchfile";
+  $return->value = $filename;
   $return->msg = "Upload successful";
   return $return;
 }

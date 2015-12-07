@@ -5,6 +5,8 @@ require_once "../app/transaction.php";
 
 
 startSession(true);
+getDBCredentials(getAuthUser()->usertype);
+clearCSRFToken();
 
 //generatePDF(8);
 
@@ -16,8 +18,9 @@ if (getAuthUser()->usertype === 'C') {
   $transactions = getTransactionsByAccountId($accountId);
   $showDownload = "?download=1";
 } else {
-  if (isset($_GET['id']) && $_GET['id'] > 0) {
-    $accountId = getAccountByUserId($_GET['id'])->ID;
+  //4.8.1
+  if (isset($_GET['id']) && is_numeric((int) $_GET['id']) && ((int) $_GET['id']) > 0) {
+    $accountId = getAccountByUserId((int) $_GET['id'])->ID;
     $transactions = getTransactionsByAccountId($accountId);
     $showDownload = "?id=".$_GET['id']."&download=1";
   } else {
@@ -67,10 +70,13 @@ include("header.php");
     <thead>
       <tr>
         <th>#</th>
-        <th>Created On</th>
-        <th>Sender</th>
-        <th>Recipient</th>
+        <th>Sender Name</th>
+        <th>Sender Account</th>
+        <th>Recipient Name</th>
+        <th>Recipient Account</th>
         <th>Amount</th>
+        <th>Description</th>
+        <th>Created On</th>
         <th>Status</th>
         <th>Tan</th>
         <th>Approved By</th>
@@ -82,10 +88,13 @@ include("header.php");
     <?php foreach($transactions as $transaction): ?>
       <tr>
         <td><?php echo $transaction->ID; ?></td>
-        <td><?php echo $transaction->DATE_CREATED; ?></td>
+        <td><?php echo $transaction->SENDER_NAME; ?></td>
         <td><?php echo $transaction->SENDER_ACCOUNT_NUM; ?></td>
+        <td><?php echo $transaction->RECIPIENT_NAME; ?></td>
         <td><?php echo $transaction->RECIPIENT_ACCOUNT_NUM; ?></td>
         <td><?php echo number_format($transaction->AMOUNT, 2, ".", ","); ?></td>
+        <td><?php echo $transaction->DESCRIPTION; ?></td>
+        <td><?php echo $transaction->DATE_CREATED; ?></td>
         <td><?php if ($transaction->STATUS === "A") echo "Approved"; else if ($transaction->STATUS === "D") echo "Declined"; else echo "Pending"; ?></td>
         <td><?php echo $transaction->TAN_NUMBER; //TAN NUMBER ? ?></td>
         <td><?php echo $transaction->APPROVED_BY_NAME; ?></td>

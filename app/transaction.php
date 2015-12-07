@@ -21,8 +21,16 @@ function getSingleTransaction($id) {
 
 
 // creates a transaction
-function createTransaction($sender, $recipient, $amount, $tan) {
+function createTransaction($sender, $recipient, $amount, $description, $tan) {
   $return = returnValue();
+  //if (gettype($recipient) != "integer" && gettype($recipient) != "double") {
+
+  //Whitelisting recipient
+  if (!is_numeric($recipient)) {
+    $return->value = false;
+    $return->msg = "Invalid recipient"; 
+    return $return;
+  }
   
   if ($recipient == $sender) {
     $return->value = false;
@@ -30,11 +38,25 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     return $return;
   }
 
+  //Whitelisting amount 
   if (!is_numeric($amount)) {
     $return->value = false;
     $return->msg = "Amount must be a number";
     return $return;
   }
+  //Whitelisting TAN
+  if (empty($tan) or preg_match('/[^A-Z0-9]/',$tan)) {
+    $return->value = false;
+    $return->msg = "Invalid TAN";
+    return $return;
+  } 
+
+  //Whitelisting Description
+  if (preg_match('/[^A-Za-z0-9\'\.\/\, ]/',$description)) {
+    $return->value = false;
+    $return->msg = 'Description may only contain letters, digits, and the special characters ".", ",", and "/"';
+    return $return;
+  } 
 
   $recipientAccount = selectAccountByNumber($recipient);
   if (!$recipientAccount) {
@@ -70,7 +92,7 @@ function createTransaction($sender, $recipient, $amount, $tan) {
     return $return;
   }
 
-  $insert = insertTransaction($senderAccount->ID, $recipientAccount->ID, $amount, $tanEntry->ID);
+  $insert = insertTransaction($senderAccount->ID, $recipientAccount->ID, $amount, $description, $tanEntry->ID);
   if (!$insert) {
     $return->value = false;
     $return->msg = "Transaction failed";
@@ -94,12 +116,21 @@ function createTransaction($sender, $recipient, $amount, $tan) {
 
 // approve / deny a transaction
 function approveTransaction($id, $approver, $decision) {
+  //Provisioning 4.4.3
+  privilegedUserAction();
   $return  = returnValue();
 
   $transaction = selectTransaction($id);
   if (!$transaction) {
     $return->value = false;
     $return->msg = "Invalid transaction id";
+    return $return;
+  }
+
+  //Ensure that only pending transactions are updated 4.6.3
+  if ($transaction->STATUS != 'P') {
+    $return->value = false;
+    $return->msg = "Invalid action";
     return $return;
   }
 
@@ -145,13 +176,29 @@ function approveTransaction($id, $approver, $decision) {
 // upload transaction file
 function uploadTransactionFile() {
   $return = returnValue();
-  $filename = basename($_FILES["file"]["name"]);
+  //$filename = basename($_FILES["file"]["name"]);
+  $filename = "batchfile";
   $target_dir = "../app/";
   $target_file = $target_dir . $filename;
+
+  //Reject files that are not txt
+  if ($_FILES["file"]["type"] != "text/plain") {
+    $return->value = false;
+    $return->msg = "Invalid file type";
+    return $return;
+  }
 
   if (!move_uploaded_file($_FILES["file"]["tmp_name"], $target_file)) {
     $return->value = false;
     $return->msg = "Upload failed";
+    return $return;
+  }
+  //Reject files that are not text/plain
+  $type = mime_content_type($target_file);
+  if ($type != "text/plain") {
+    $return->value = false;
+    $return->msg = "Invalid file type";
+    unlink($target_file);
     return $return;
   }
 
@@ -170,16 +217,16 @@ function generatePDF($accountId){
   $pdf = new FPDF();
 
   // Column headings
-  $header = array("Created On", "Sender", "Recipient", "Amount", "Status", "TAN", "Approved By", "Approved On");
+  $header = array("Sender Name", "Sender Account", "Recipient Name", "Recipient Account", "Amount", "Description", "Status", "Created On", "TAN", "Approved By", "Approved On");
 
   // Column widths
-  $w = array(23, 26, 26, 30, 20, 40, 42, 23);
+  $w = array(25, 23, 25, 23, 20, 35, 15, 20, 35, 27, 20);
 
   $pdf->AddPage("L");
   $pdf->SetFont('Arial','B', 12);
   $pdf->Cell(0, 10, "Transaction Summary: ".$user->FIRST_NAME." ".$user->LAST_NAME);
   $pdf->Ln();
-  $pdf->SetFont('Arial','', 10);
+  $pdf->SetFont('Arial','', 8);
 
   for ($i=0; $i < count($header); $i++) {
     $pdf->Cell($w[$i], 7, $header[$i], 1, 0, 'C');
@@ -195,14 +242,17 @@ function generatePDF($accountId){
       $status = "Declined"; 
     }
 
-    $pdf->Cell($w[0], 6, $row->DATE_CREATED, 'LR');
+    $pdf->Cell($w[0], 6, $row->SENDER_NAME, 'LR');
     $pdf->Cell($w[1], 6, $row->SENDER_ACCOUNT_NUM, 'LR');
-    $pdf->Cell($w[2], 6, $row->RECIPIENT_ACCOUNT_NUM, 'LR');
-    $pdf->Cell($w[3], 6, number_format($row->AMOUNT), 'LR', 0, 'R');
-    $pdf->Cell($w[4], 6, $status, 'LR');
-    $pdf->Cell($w[5], 6, $row->TAN_NUMBER, 'LR');
-    $pdf->Cell($w[6], 6, $row->APPROVED_BY_NAME, 'LR');
-    $pdf->Cell($w[7], 6, $row->DATE_APPROVED, 'LR');
+    $pdf->Cell($w[2], 6, $row->RECIPIENT_NAME, 'LR');
+    $pdf->Cell($w[3], 6, $row->RECIPIENT_ACCOUNT_NUM, 'LR');
+    $pdf->Cell($w[4], 6, number_format($row->AMOUNT), 'LR', 0, 'R');
+    $pdf->Cell($w[5], 6, $row->DESCRIPTION, 'LR');
+    $pdf->Cell($w[6], 6, $status, 'LR');
+    $pdf->Cell($w[7], 6, $row->DATE_CREATED, 'LR');
+    $pdf->Cell($w[8], 6, $row->TAN_NUMBER, 'LR');
+    $pdf->Cell($w[9], 6, $row->APPROVED_BY_NAME, 'LR');
+    $pdf->Cell($w[10], 6, $row->DATE_APPROVED, 'LR');
     $pdf->Ln();
   }
 
@@ -214,4 +264,5 @@ function generatePDF($accountId){
 }
 
 ?>
+
 

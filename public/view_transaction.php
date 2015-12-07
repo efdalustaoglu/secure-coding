@@ -4,12 +4,20 @@ require_once "../app/user.php";
 require_once "../app/transaction.php";
 
 startSession(true);
+//SQL: Get credentials for user group
+getDBCredentials(getAuthUser()->usertype);
+//CSRF
+if (!isset($_POST['approve']) && !isset($_POST['deny'])) {
+  clearCSRFToken();
+  createCSRFToken('transaction');
+}
 
 // process form
-if (isset($_POST['approve']) || isset($_POST['deny'])) {
+if (isset($_POST['approve']) || isset($_POST['deny']) && isset($_SESSION['transactiontoken']) && $_POST['transactiontoken'] == $_SESSION['transactiontoken']) {
   $id = $_POST['transactionid'];
   $decision = (isset($_POST['approve'])) ? "A" : "D";
   $approver = getAuthUser()->userid;
+  unset($_SESSION['transactiontoken']);
   $approval = approveTransaction($id, $approver, $decision); 
   
   if (!empty($approval->msg)) {
@@ -19,8 +27,11 @@ if (isset($_POST['approve']) || isset($_POST['deny'])) {
 
 // get single transaction
 if (isset($_GET['id'])) {
-  $id = $_GET['id'];
-  $transaction = getSingleTransaction($id);
+  $id = (int) $_GET['id'];
+  //4.8.1
+  if (is_numeric($id)) {
+    $transaction = getSingleTransaction($id);
+  }
 }
 
 // include header
@@ -29,27 +40,50 @@ include("header.php");
 ?>
 
 <?php if (isset($transaction) && $transaction): ?>
+
+<?php //Ensure user is authorized to see transaction 4.4.3
+  $account = getAccountByUserId(getAuthUser()->userid)->ID;
+  if (getAuthUser()->usertype != 'E' && $transaction->SENDER_ACCOUNT != $account && $transaction->RECIPIENT_ACCOUNT != $account) {
+    die("Unauthorized access");
+  } ?>
+
 <h3>View Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+  <input type="hidden" name="transactiontoken" id="transactiontoken" value="<?php echo $_SESSION['transactiontoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
-      <label>Created On</label>
-      <span><?php echo $transaction->DATE_CREATED; ?></span>
+      <label>Sender Name</label>
+      <span><?php echo $transaction->SENDER_NAME; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Sender</label>
+      <label>Sender Account</label>
       <span><?php echo $transaction->SENDER_ACCOUNT_NUM; ?></span>
     </div>
 
     <div class="pure-control-group">
-      <label>Recipient</label>
+      <label>Recipient Name</label>
+      <span><?php echo $transaction->RECIPIENT_NAME; ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Recipient Account</label>
       <span><?php echo $transaction->RECIPIENT_ACCOUNT_NUM; ?></span>
     </div>
 
     <div class="pure-control-group">
       <label>Amount</label>
       <span><?php echo number_format($transaction->AMOUNT, 2, ".", ","); ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Description</label>
+      <span><?php echo $transaction->DESCRIPTION; ?></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>Created On</label>
+      <span><?php echo $transaction->DATE_CREATED; ?></span>
     </div>
 
     <div class="pure-control-group">

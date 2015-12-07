@@ -5,6 +5,24 @@ if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 require_once "db.php";
 require_once "transaction.php";
 
+//CSRF token
+function createCSRFToken($action) {
+    $data[$action . 'token'] = md5(uniqid(rand(), true));
+    $_SESSION[$action . 'token'] = $data[$action . 'token'];
+}
+
+function clearCSRFToken() {
+  if (isset($_SESSION['usertoken'])) {
+    unset($_SESSION['usertoken']);
+  }
+  if (isset($_SESSION['transactiontoken'])) {
+    unset($_SESSION['transactiontoken']);
+  }
+  if (isset($_SESSION['newtransactiontoken'])) {
+    unset($_SESSION['newtransactiontoken']);
+  }
+}
+
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
   startSession();
@@ -18,6 +36,14 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 // start session
 function startSession($privileged = false) {
   if (session_id() === '') {
+    $secure = false;
+    //$secure = true;
+    $httponly = true;
+    //ini_set('session.use_only_cookies',1);
+    $path = APP_PATH;
+    $domain = APP_DOMAIN;
+    //$domain = $_SERVER['SERVER_ADDR'];
+    session_set_cookie_params(0, $path, $domain, $secure, $httponly);
     session_start();
   }
 
@@ -29,6 +55,8 @@ function startSession($privileged = false) {
 function checkAccess() {
   if (!isUserAuth()) {
     logout();
+    //Ensure user does not receive sensitive content 4.4.3
+    die("Unauthorized access");
   }
 }
 
@@ -52,6 +80,7 @@ function getAuthUser() {
 // logs in user
 function login($email, $password) {
   $return  = returnValue();
+  getDBCredentials('L');
 
   if (empty($email) || empty($password)) {
     $return->value = false;
@@ -113,16 +142,22 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
     return $return;
   }
 
+  //Whitelist name/surname fields
+  if (preg_match('/[^A-Za-z\']/',$firstname)) {
+    $return->value = false;
+    $return->msg = "Invalid First Name";
+    return $return;
+  } 
+  if (preg_match('/[^A-Za-z\']/',$lastname)) {
+    $return->value = false;
+    $return->msg = "Invalid Last Name";
+    return $return;
+  } 
+
   // validate email format
   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $return->value = false;
     $return->msg = "Invalid email format";
-    return $return;
-  }
-
-  if ( cleanInput($firstname) || cleanInput($lastname) || cleanInput($password) || cleanInput($confirmPassword) ) {
-    $return->value = false;
-    $return->msg = "Invalid user type";
     return $return;
   }
 
@@ -141,6 +176,7 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
   }
 
   $password = md5($password);
+  getDBCredentials('R');
   $insert = insertUser($userType, $email, $password, $firstname, $lastname);
 
   // check if db operation failed
@@ -157,17 +193,38 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
 
 // gets all users in the databse
 function getUsers() {
+  getDBCredentials(getAuthUser()->usertype);
   return selectUsers();
 }
 
 // gets a single user from the db
 function getSingleUser($id) {
+  getDBCredentials(getAuthUser()->usertype);
   return selectUser($id);
+}
+
+
+//Provisioning 4.4.3
+function privilegedUserAction() {
+  if (getAuthUser()->usertype != 'E') {
+    die("Unauthorized access");
+  }
 }
 
 // approves a user registration
 function approveRegistration($id, $approver, $decision) {
+  privilegedUserAction();
   $return = returnValue();
+  getDBCredentials(getAuthUser()->usertype);
+
+  //Ensure that users are approved only once 4.6.3
+  $user = getSingleUser($id);
+  if ($user->APPROVED_BY != NULL) {
+    $return->value = false;
+    $return->msg = "Invalid action";
+    return $return;
+  }
+
   $update = updateUserRegistration($id, $approver, $decision);
 
   if (!$update) {
@@ -295,6 +352,22 @@ function sendTanEmail($userId, $accountId) {
   return sendEmailWithPDF($userId, $email, $name, $subject, $body);
 }
 
+function sendRegistrationEmail($userId) {
+  $tans = selectTansByUserId($accountId);
+  $user = selectUser($userId);
+  $email = $user->EMAIL;
+  $name = $user->FIRST_NAME . " " . $user->LAST_NAME;
+
+  $subject = "Tan Numbers - ".$name;
+  $body = "";
+
+  for ($i = 0; $i < count($tans); $i++) {
+    $body .= ($i + 1).". ".$tans[$i]->TAN_NUMBER."<br/>" ;
+  }
+
+  return sendEmail($email, $name, $subject, $body);
+}
+
 function sendEmail($email, $name, $subject, $body) {
   require_once('PHPMailer/class.phpmailer.php');
   $mail = new PHPMailer();
@@ -317,7 +390,6 @@ function sendEmail($email, $name, $subject, $body) {
 
   return true;
 }
-
 
 function sendEmailWithPDF($userId, $email, $name, $subject, $body){
   require_once('PHPMailer/class.phpmailer.php');
@@ -399,6 +471,5 @@ function cleanInput($inputString){
   return true;
 }
 
-
-
 ?>
+ 

@@ -7,15 +7,24 @@ require_once "../app/transaction.php";
 
 startSession(true);
 
+//CSRF
+if (!isset($_POST['submit']) && !isset($_POST['upload'])) {
+  clearCSRFToken();
+  createCSRFToken('newtransaction');
+}
+
 // process form
-if (isset($_POST['submit'])) {
+if (isset($_POST['submit']) && isset($_SESSION['newtransactiontoken']) && $_POST['newtransactiontoken'] == $_SESSION['newtransactiontoken']) {
   $recipient = $_POST['recipient'];
   $amount = $_POST['amount'];
+  $description = $_POST['description'];
   $tan = $_POST['tan'];
+  getDBCredentials(getAuthUser()->usertype);
   $sender = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
   
-  $transaction = createTransaction($sender, $recipient, $amount, $tan);
+  $transaction = createTransaction($sender, $recipient, $amount, $description, $tan);
   if ($transaction->value) {
+    unset($_SESSION['newtransactiontoken']);
     header("Location: "."view_transactions.php");
   } 
 
@@ -56,6 +65,7 @@ include("header.php");
 
 <h3>Create Transaction</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+  <input type="hidden" name="newtransactiontoken" id="newtransactiontoken" value="<?php echo $_SESSION['newtransactiontoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
       <label>Recipient Account</label>
@@ -65,6 +75,11 @@ include("header.php");
     <div class="pure-control-group">
       <label>Amount</label>
       <input name="amount" type="text" placeholder="Amount">
+    </div>
+
+    <div class="pure-control-group">
+      <label>Description</label>
+      <input name="description" type="text" placeholder="Description">
     </div>
 
     <div class="pure-control-group">

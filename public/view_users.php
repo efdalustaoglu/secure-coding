@@ -5,6 +5,10 @@ define('BANK_APP', TRUE);
 require_once "../app/user.php";
 
 startSession(true);
+clearCSRFToken();
+
+//Provisioning 4.4.3
+privilegedUserAction();
 
 $users = getUsers();
 

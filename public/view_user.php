@@ -6,11 +6,18 @@ require_once "../app/user.php";
 
 startSession(true);
 
+//CSRF
+if (!isset($_POST['approve']) && !isset($_POST['reject'])) {
+  clearCSRFToken();
+  createCSRFToken('user');
+}
+
 // process form
-if (isset($_POST['approve']) || isset($_POST['reject'])) {
+if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['usertoken']) && $_POST['usertoken'] == $_SESSION['usertoken']) {
   $id = $_POST['userid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
+  unset($_SESSION['usertoken']);
   $approval = approveRegistration($id, $approver, $decision);
 
   if (!empty($approval->msg)) {
@@ -18,13 +25,17 @@ if (isset($_POST['approve']) || isset($_POST['reject'])) {
   }
 }
 
-// get single user
-$id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? $_GET['id'] : getAuthUser()->userid;
-$user = getSingleUser($id);
+// get single user - Sanitize input 4.8.1
+$id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? (int) $_GET['id'] : getAuthUser()->userid;
+//4.8.1
+if (is_numeric($id)) {
+  $user = getSingleUser($id);
+}
 
 // if this user is invalid, redirect to view users page
 if (!$user) {
   header("Location: "."view_users.php");
+  exit();
 }
 
 // include header
@@ -36,6 +47,7 @@ include("header.php");
 <?php if ($user): ?>
 <h3>View User</h3>
 <form class="pure-form pure-form-aligned" method="post" action="<?php $_SERVER['PHP_SELF']; ?>">
+  <input type="hidden" name="usertoken" id="usertoken" value="<?php echo $_SESSION['usertoken'] ?>" />
   <fieldset>
     <div class="pure-control-group">
       <label>Created On</label>

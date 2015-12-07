@@ -393,7 +393,7 @@ function sendEmail($email, $name, $subject, $body) {
 
 function sendEmailWithPDF($userId, $email, $name, $subject, $body){
   require_once('PHPMailer/class.phpmailer.php');
-  $doc = generatePDF($userId);
+  $doc = generateUserPDF($userId);
   $password = randomPassword();  
   $mail = new PHPMailer(); 
   $body="Requested Tan Numbers are attached to the e-mail..\n\n<br /><br />Password:$password";
@@ -410,8 +410,8 @@ function sendEmailWithPDF($userId, $email, $name, $subject, $body){
   $mail->AddAddress($email, $name);
   $mail->Subject = $subject;
   $mail->MsgHTML($body);
-
-  $doc->SetProtection(array(), $password); 
+ 
+  $doc->SetProtection(array('print','copy'), $password);
   $doc = $doc->Output('', 'S');//Save the pdf file
 
   $mail->AddStringAttachment($doc, 'doc.pdf', 'base64', 'application/pdf');
@@ -428,7 +428,7 @@ function sendEmailWithPDF($userId, $email, $name, $subject, $body){
 /*
   Generates the PDF file that is given by user ID, and returns the created PDF document
 */
-function generatePDF($userId){
+function generateUserPDF($userId){
   require('FPDF/fpdf_protection.php');
   $pdf = new FPDF();//create the instance
   $pdf->AddPage();

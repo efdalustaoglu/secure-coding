@@ -10,20 +10,20 @@ define("DB_NAME", "bank_db");
 function getDBCredentials($usertype) {
   switch ($usertype) {
     case 'L':
-      define("DB_USER", "login");
-      define("DB_PASSWORD", "login");
+      if(!defined('DB_USER')) {  define("DB_USER", "login"); }
+      if(!defined('DB_PASSWORD')) {  define("DB_PASSWORD", "login"); }
       break;
     case 'R':
-      define("DB_USER", "register");
-      define("DB_PASSWORD", "register");
+      if(!defined('DB_USER')) { define("DB_USER", "register"); }
+      if(!defined('DB_PASSWORD')) { define("DB_PASSWORD", "register"); }
       break;
     case 'C':
-      define("DB_USER", "client");
-      define("DB_PASSWORD", "client");
+      if(!defined('DB_USER')) { define("DB_USER", "client"); }
+      if(!defined('DB_PASSWORD')) { define("DB_PASSWORD", "client"); }
       break;
     case 'E':
-      define("DB_USER", "employee");
-      define("DB_PASSWORD", "employee");
+      if(!defined('DB_USER')) { define("DB_USER", "employee"); }
+      if(!defined('DB_PASSWORD')) { define("DB_PASSWORD", "employee"); }
       break;
     default:
   } 

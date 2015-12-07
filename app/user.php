@@ -43,7 +43,7 @@ function startSession($privileged = false) {
     $path = APP_PATH;
     $domain = APP_DOMAIN;
     //$domain = $_SERVER['SERVER_ADDR'];
-    session_set_cookie_params($cookieParams["lifetime"],$path,$domain,$secure,$httponly);
+    session_set_cookie_params(0, $path, $domain, $secure, $httponly);
     session_start();
   }
 

@@ -416,7 +416,8 @@ function sendEmail($email, $name, $subject, $body) {
 
 function sendEmailWithPDF($userId, $email, $name, $subject, $body){
   require_once('PHPMailer/class.phpmailer.php');
-  $doc = generateUserPDF($userId);
+  $account = selectAccountByUserId($userId);
+  $doc = generateUserPDF($account->ID);
   $password = randomPassword();  
   $mail = new PHPMailer(); 
   $body="Requested Tan Numbers are attached to the e-mail..\n\n<br /><br />Password:$password";
@@ -451,7 +452,7 @@ function sendEmailWithPDF($userId, $email, $name, $subject, $body){
 */
 function generateUserPDF($userId){
   require_once('FPDF/fpdf_protection.php');
-  $pdf = new FPDF();//create the instance
+  $pdf = new FPDF_Protection();//create the instance
   $pdf->AddPage();
   $pdf->SetFont('Helvetica','B',18);//set the font style
   $pdf->Cell(75);//start 7.5 cm from right

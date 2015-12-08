@@ -23,6 +23,33 @@ function clearCSRFToken() {
   }
 }
 
+function throttleAccess($func) {
+  if (isset($_SESSION['throttle_'.$func]) && 
+    (time() - $_SESSION['throttle_'.$func] > 600) &&
+    ($_SESSION['throttle_ip_'.$func] === $_SERVER['REMOTE_ADDR'])) {
+    die("access banned for 10 mins");
+  }
+  $_SESSION['throttle_'.$func] = time();
+  $_SESSION['throttle_ip_'.$func] = $_SERVER['REMOTE_ADDR'];
+  $_SESSION['throttle_ip_tries'.$func] = $_SERVER['REMOTE_ADDR'];
+}
+
+function getSCS() {
+  $scs = "/SCSimulator/SC_Simulator.jar";
+  $program = realpath("/SCSimulator/");
+  $program_directory = substr($program, 0, strrpos($program, "/"));
+  chdir($program_directory);
+
+  $acctNum = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
+  $dbUser = "root";
+  $dbPass = "";
+  $dbName = "bank_db";
+  $command = "./tan_generator pin $acctNum '$dbUser' '$dbPass' '$dbName'";
+  
+  $output = shell_exec($command);
+  return $output;
+}
+
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
   startSession();

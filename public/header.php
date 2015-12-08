@@ -92,6 +92,9 @@ require_once "../app/user.php";
             </a>
           </li>
           <li class="pure-menu-item">
+            <a href="../app/SCSimulator/SC_Simulator.jar" class="pure-menu-link">Download SCS</a>
+          </li>
+          <li class="pure-menu-item">
             <a href="<?php echo 'logout.php'; ?>" class="pure-menu-link">Logout</a>
           </li>
         </ul>

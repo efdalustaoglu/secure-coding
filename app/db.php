@@ -163,6 +163,22 @@ function selectByEmailAndPassword($email, $password) {
   return executeQueryPrepared($stmt, $connection, true);
 }
 
+// select a user by email
+function selectUserByEmail($email) {
+  $connection = openDb();
+  $email = escape($email, $connection);
+
+  //Using prepared statements and parameterized queries:
+  $sql = "SELECT * FROM users WHERE EMAIL = ? AND DATE_APPROVED IS NOT NULL";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("s",$email);
+
+  return executeQueryPrepared($stmt, $connection, true);
+}
+
 // insert into user table
 function insertUser($userType, $email, $password, $firstname, $lastname) {
   $connection = openDb();
@@ -207,6 +223,21 @@ function updateUserRegistration($id, $approver, $decision) {
 
   return executeNonQuery($stmt, $connection);
 }
+
+
+function updateUserPassword($id, $password) {
+  $connection = openDb();
+  $id = (int) $id;
+  $sql = "UPDATE users SET PASSWORD = ? WHERE ID = ?";
+  $stmt = $connection->stmt_init();
+  if(!$stmt->prepare($sql)) {
+    return false;
+  }
+  $stmt->bind_param("si",$password,$id);
+
+  return executeNonQuery($stmt, $connection);
+}
+
 
 // delete a rejected user registration
 function deleteUserRegistration($id) {

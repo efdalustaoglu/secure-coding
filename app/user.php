@@ -24,14 +24,14 @@ function clearCSRFToken() {
 }
 
 function throttleAccess($func) {
+  startSession();
   if (isset($_SESSION['throttle_'.$func]) && 
-    (time() - $_SESSION['throttle_'.$func] > 600) &&
+    (time() - $_SESSION['throttle_'.$func] < 10) &&
     ($_SESSION['throttle_ip_'.$func] === $_SERVER['REMOTE_ADDR'])) {
-    die("access banned for 10 mins");
+    die("access banned");
   }
   $_SESSION['throttle_'.$func] = time();
   $_SESSION['throttle_ip_'.$func] = $_SERVER['REMOTE_ADDR'];
-  $_SESSION['throttle_ip_tries'.$func] = $_SERVER['REMOTE_ADDR'];
 }
 
 // set session variables
@@ -96,6 +96,7 @@ function getAuthUser() {
 
 // logs in user
 function login($email, $password) {
+  throttleAccess('login');
   $return  = returnValue();
   getDBCredentials('L');
 
@@ -135,6 +136,8 @@ function logout () {
 // returns the password of the user
 function rememberPassword($email){
   $return  = returnValue();
+
+  getDBCredentials('X');
     
   // validate email format
   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -142,6 +145,34 @@ function rememberPassword($email){
     $return->msg = "Invalid email format";
     return $return;
   }
+
+  $user = selectUserByEmail($email);
+  if (!$user) {
+    $return->value = false;
+    $return->msg = "Email not in DB";
+    return $return;
+  }
+
+  $newPassword = randomPassword();
+  $password = md5($newPassword);
+
+  require_once('PHPMailer/class.phpmailer.php');
+  $mail = new PHPMailer();
+  $mail->CharSet = 'UTF-8';
+  $mail->SetFrom('Admin@secoding.com', 'SecureCodingTeam6');
+  $mail->SMTPAuth = true;
+  $mail->Host = "smtp.gmail.com";
+  $mail->SMTPSecure = "ssl";
+  $mail->Username = "secoding6@gmail.com";
+  $mail->Password = "efenikosmaltefdal"; 
+  $mail->Port = "465";
+  $mail->isSMTP();
+  $mail->AddAddress($user->EMAIL, $user->FIRST_NAME." ".$user->LAST_NAME);
+  $mail->Subject = "New Password";
+  $mail->MsgHTML("Your new password is ".$newPassword);
+  $mail->send();
+
+  updateUserPassword($user->ID, $password);
   
   $return->value = true;
   $return->msg = "Your password successfully sent your e-mail address";
@@ -150,6 +181,7 @@ function rememberPassword($email){
 
 // creates a user: employee or client
 function createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname) {
+  throttleAccess('createuser');
   $return  = returnValue();
 
   // check for empty fields

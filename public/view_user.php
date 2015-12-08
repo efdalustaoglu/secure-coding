@@ -6,22 +6,24 @@ require_once "../app/user.php";
 
 startSession(true);
 
+//CSRF
+if (!isset($_POST['approve']) && !isset($_POST['reject'])) {
+  clearCSRFToken();
+  createCSRFToken('user');
+}
+
 // process form
 if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['usertoken']) && $_POST['usertoken'] == $_SESSION['usertoken']) {
   $id = $_POST['userid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
-  $balance = $_POST['balance'];
   unset($_SESSION['usertoken']);
-  $approval = approveRegistration($id, $approver, $decision, $balance);
+  $approval = approveRegistration($id, $approver, $decision);
 
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
   }
 }
-
-clearCSRFToken();
-createCSRFToken('user');
 
 // get single user - Sanitize input 4.8.1
 $id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? (int) $_GET['id'] : getAuthUser()->userid;
@@ -37,7 +39,7 @@ if (!$user) {
 }
 
 function getSCS() {
-  $program = realpath("../app/SCSimulator/");
+  $program = realpath("../app/SCSimulator/tan_generator");
   $program_directory = substr($program, 0, strrpos($program, "/"));
   chdir($program_directory);
 
@@ -94,10 +96,7 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Balance</label>
-      <span><?php if ($user->DATE_APPROVED === null && getAuthUser()->usertype === 'E'): ?>
-      <input name="balance" type="text" placeholder="Balance">
-      <?php else: ?>
-      <?php echo number_format($user->BALANCE, 2, ".", ","); endif;?></span>
+      <span><?php echo number_format($user->BALANCE, 2, ".", ","); ?></span>
     </div>
 
     <div class="pure-control-group">

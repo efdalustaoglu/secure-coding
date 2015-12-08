@@ -26,6 +26,8 @@ function getDBCredentials($usertype) {
       if(!defined('DB_PASSWORD')) { define("DB_PASSWORD", "employee"); }
       break;
     default:
+      define("DB_USER", "root");
+      define("DB_PASSWORD", "");
   } 
 }
 

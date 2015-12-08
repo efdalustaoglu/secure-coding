@@ -38,14 +38,14 @@ int mysqlConnect(){
 	
 	// check for possible errors
 	if (mysql_errno(mysql) != 0) {
-		//printf("%s\n", mysql_error(mysql));
+		printf("%s\n", mysql_error(mysql));
 		return mysql_errno(mysql);
 	}
 	
 	// connect to a local MySQL server
 	mysql_real_connect(mysql, "127.0.0.1", db_user, db_password, NULL, 0, NULL, 0);
 	if (mysql_errno(mysql) != 0) {
-		//printf("%s\n", mysql_error(mysql));
+		printf("%s\n", mysql_error(mysql));
 		return mysql_errno(mysql);
 	}
 	
@@ -65,7 +65,7 @@ int mysqlCloseConnection(){
 	if(mysql != NULL){
 		mysql_close(mysql);
 		if (mysql_errno(mysql) != 0) {
-			//printf("%s\n", mysql_error(mysql));
+			printf("%s\n", mysql_error(mysql));
 			return mysql_errno(mysql);
 		}
 	}
@@ -108,7 +108,7 @@ int executeQuery(char *query){
 	//printf("%d   %d   %s\n", mysql, strlen(query), query);
 	mysql_real_query(mysql, query, strlen(query));
 	if(mysql_errno(mysql) != 0) {
-		//printf("%s\n", mysql_error(mysql));
+		printf("%s\n", mysql_error(mysql));
 		return mysql_errno(mysql);
 	}
 	
@@ -128,13 +128,13 @@ MYSQL_RES *executeQueryReply(char *query){
 	MYSQL_RES  *query_res = NULL;
 	mysql_real_query(mysql, query, strlen(query));
 	if(mysql_errno(mysql) != 0) {
-		//printf("%s\n", mysql_error(mysql));
+		printf("%s\n", mysql_error(mysql));
 		return NULL;
 	}
 
 	query_res = mysql_store_result(mysql);
 	if(mysql_errno(mysql) != 0) {
-		//printf("%s\n", mysql_error(mysql));
+		printf("%s\n", mysql_error(mysql));
 		return NULL;
 	}
 	
@@ -335,6 +335,7 @@ int tanValid(unsigned char *lastTan, unsigned char *currentTan){
 	char *generatedTan = (char *)malloc(16 * sizeof(char));
 	strcpy(generatedTan, currentTan);
 	generatedTan[15] = 0;
+	//printf("Before: lastTan == generatedTan? : %s == %s\n", lastTan, generatedTan);
 	
 	// Explanation:
 	// Let f(x) be the function above to generate a TAN from a hash value
@@ -344,11 +345,12 @@ int tanValid(unsigned char *lastTan, unsigned char *currentTan){
 	// Notice that a new valid TAN cannot be generated with the knowledge of the lastTan alone, as it is impossible to efficiently calculate g^-1
 	// To check if a newly generated TAN is valid we check if g(generatedTan) == lastTan, e.g. g(g(PIN)^998) == g(PIN)^999
 	// Since the user may have skipped one or more TANs, we need to check if applying g() to the generated TAN multiple times leads to an equality with g(PIN)^1000
-	for(i=0; i<1000; i++){
+	for(i=0; i<10; i++){
 		MD5_Init(&context);
 		MD5_Update(&context, generatedTan, 15);
 		MD5_Final(hash, &context);
 		generatedTan = generateTANfromHash(hash);
+		//printf("lastTan == generatedTan? : %s == %s\n", lastTan, generatedTan);
 		if(strcmp(lastTan, generatedTan) == 0){
 			equal = 0;
 			break;
@@ -407,7 +409,7 @@ char *generatePIN(int accountNumber){
 	
 	// create g(PIN)^999 as initial reference value for further TAN validations, with g(x) being f(MD5(x)),
 	// f being the function to generate a 15 character long TAN from a 120 bit hash and MD5 being the MD5 hash function
-	for(i=0; i<999; i++){
+	for(i=0; i<1001; i++){
 		MD5_Init(&context);
 		MD5_Update(&context, generatedTan, 15);
 		MD5_Final(hash, &context);

@@ -6,11 +6,6 @@ require_once "../app/transaction.php";
 startSession(true);
 //SQL: Get credentials for user group
 getDBCredentials(getAuthUser()->usertype);
-//CSRF
-if (!isset($_POST['approve']) && !isset($_POST['deny'])) {
-  clearCSRFToken();
-  createCSRFToken('transaction');
-}
 
 // process form
 if (isset($_POST['approve']) || isset($_POST['deny']) && isset($_SESSION['transactiontoken']) && $_POST['transactiontoken'] == $_SESSION['transactiontoken']) {
@@ -24,6 +19,9 @@ if (isset($_POST['approve']) || isset($_POST['deny']) && isset($_SESSION['transa
     $showMsg = $approval->msg;
   }
 }
+
+clearCSRFToken();
+createCSRFToken('transaction');
 
 // get single transaction
 if (isset($_GET['id'])) {

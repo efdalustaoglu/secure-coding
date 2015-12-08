@@ -6,24 +6,22 @@ require_once "../app/user.php";
 
 startSession(true);
 
-//CSRF
-if (!isset($_POST['approve']) && !isset($_POST['reject'])) {
-  clearCSRFToken();
-  createCSRFToken('user');
-}
-
 // process form
 if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['usertoken']) && $_POST['usertoken'] == $_SESSION['usertoken']) {
   $id = $_POST['userid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
+  $balance = $_POST['balance'];
   unset($_SESSION['usertoken']);
-  $approval = approveRegistration($id, $approver, $decision);
+  $approval = approveRegistration($id, $approver, $decision, $balance);
 
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
   }
 }
+
+clearCSRFToken();
+createCSRFToken('user');
 
 // get single user - Sanitize input 4.8.1
 $id = (isset($_GET['id']) && getAuthUser()->usertype === 'E') ? (int) $_GET['id'] : getAuthUser()->userid;
@@ -81,7 +79,10 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Balance</label>
-      <span><?php echo number_format($user->BALANCE, 2, ".", ","); ?></span>
+      <span><?php if ($user->DATE_APPROVED === null && getAuthUser()->usertype === 'E'): ?>
+      <input name="balance" type="text" placeholder="Balance">
+      <?php else: ?>
+      <?php echo number_format($user->BALANCE, 2, ".", ","); endif;?></span>
     </div>
 
     <div class="pure-control-group">

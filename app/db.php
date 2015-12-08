@@ -432,18 +432,18 @@ function selectTansByUserId($id) {
 }
 
 // insert user account
-function insertAccount($userid, $accountNumber) {
+function insertAccount($userid, $accountNumber, $balance) {
   $connection = openDb();
   $date = date('Y-m-d');
 
   //Using prepared statements and parameterized queries:
-  $sql = "INSERT INTO accounts(USER, ACCOUNT_NUMBER, DATE_CREATED) ";
-  $sql.= "VALUES (?, ?, ?)";
+  $sql = "INSERT INTO accounts(USER, ACCOUNT_NUMBER, BALANCE, DATE_CREATED) ";
+  $sql.= "VALUES (?, ?, ?, ?)";
   $stmt = $connection->stmt_init();
   if(!$stmt->prepare($sql)) {
     return false;
   }
-  $stmt->bind_param("sss",$userid,$accountNumber,$date);
+  $stmt->bind_param("ssis",$userid,$accountNumber,$balance,$date);
 
   return executeNonQuery($stmt, $connection);
 }

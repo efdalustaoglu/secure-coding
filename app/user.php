@@ -218,10 +218,16 @@ function privilegedUserAction() {
 }
 
 // approves a user registration
-function approveRegistration($id, $approver, $decision) {
+function approveRegistration($id, $approver, $decision, $balance) {
   privilegedUserAction();
   $return = returnValue();
   getDBCredentials(getAuthUser()->usertype);
+
+  if (!is_numeric($balance) || $balance < 1) {
+    $return->value = false;
+    $return->msg = "Balance should be a positive number."; 
+    return $return;
+  }
 
   //Ensure that users are approved only once 4.6.3
   $user = getSingleUser($id);
@@ -246,7 +252,7 @@ function approveRegistration($id, $approver, $decision) {
   }
 
   // create user's account number
-  $accountNumber = generateAccountNumber($id);
+  $accountNumber = generateAccountNumber($id,$balance);
   if (!$accountNumber) {
     $return->value = false;
     $return->msg = "Error updating user account number";
@@ -332,14 +338,14 @@ function getAccountByAccountNumber($number) {
 }
 
 // generate a user's account number
-function generateAccountNumber($id) {
+function generateAccountNumber($id,$balance) {
   $account = selectAccountByUserId($id);
   if ($account) {
     return $account->ACCOUNT_NUMBER;
   }
 
   $accountNumber = $id + 1000000000;
-  return insertAccount($id, $accountNumber);
+  return insertAccount($id, $accountNumber, $balance);
 }
 
 function sendTanEmail($userId, $accountId) {

@@ -234,7 +234,7 @@ function approveRegistration($id, $approver, $decision, $balance) {
   $return = returnValue();
   getDBCredentials(getAuthUser()->usertype);
 
-  if (!is_numeric($balance) || $balance < 1) {
+  if ($decision && (!is_numeric($balance) || $balance < 1)) {
     $return->value = false;
     $return->msg = "Balance should be a positive number."; 
     return $return;

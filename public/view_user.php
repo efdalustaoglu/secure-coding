@@ -38,6 +38,21 @@ if (!$user) {
   exit();
 }
 
+function getSCS() {
+  $program = realpath("../app/SCSimulator/");
+  $program_directory = substr($program, 0, strrpos($program, "/"));
+  chdir($program_directory);
+
+  $acctNum = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
+  $dbUser = "root";
+  $dbPass = "";
+  $dbName = "bank_db";
+  $command = "./tan_generator pin $acctNum '$dbUser' '$dbPass' '$dbName'";
+  
+  $output = shell_exec($command);
+  return $output;
+}
+
 // include header
 $pageTitle = "View User";
 include("header.php");
@@ -101,6 +116,23 @@ include("header.php");
       <button type="submit" name="reject" class="pure-button button-error">Reject</button>
     </div>
     <?php endif; ?>
+
+    <?php if($user->DATE_APPROVED !== null) { ?>
+      <div class="pure-control-group">
+      <label>Download SCS</label>
+      <span><a target="_blank" href="../app/SCSimulator/SC_Simulator.jar">Click here</a></span>
+    </div>
+
+    <div class="pure-control-group">
+      <label>SCS PIN</label>
+      <span><a href="?download_scs">Click here</a>
+        <?php if(isset($_GET['download_scs'])) { ?>
+          <?php echo " ".getSCS(); ?>
+        <?php } ?>
+      </span>
+    </div>
+    
+    <?php } ?>
   </fieldset>
 </form>
 

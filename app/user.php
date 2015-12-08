@@ -34,22 +34,6 @@ function throttleAccess($func) {
   $_SESSION['throttle_ip_tries'.$func] = $_SERVER['REMOTE_ADDR'];
 }
 
-function getSCS() {
-  $scs = "/SCSimulator/SC_Simulator.jar";
-  $program = realpath("/SCSimulator/");
-  $program_directory = substr($program, 0, strrpos($program, "/"));
-  chdir($program_directory);
-
-  $acctNum = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
-  $dbUser = "root";
-  $dbPass = "";
-  $dbName = "bank_db";
-  $command = "./tan_generator pin $acctNum '$dbUser' '$dbPass' '$dbName'";
-  
-  $output = shell_exec($command);
-  return $output;
-}
-
 // set session variables
 function saveSession($email, $usertype, $firstname, $lastname, $userid) {
   startSession();

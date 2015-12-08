@@ -37,19 +37,25 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 function startSession($privileged = false) {
   if (session_id() === '') {
     $secure = false;
-    //$secure = true;
     $httponly = true;
-    //ini_set('session.use_only_cookies',1);
     $path = APP_PATH;
     $domain = APP_DOMAIN;
-    //$domain = $_SERVER['SERVER_ADDR'];
-    session_set_cookie_params(0, $path, $domain, $secure, $httponly);
+    session_set_cookie_params(600, $path, $domain, $secure, $httponly);
     session_start();
+    checkSessionActivity();
   }
 
   if ($privileged) {
     checkAccess();
   }
+}
+
+function checkSessionActivity() {
+  if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
+    logout();
+  }
+  $_SESSION['LAST_ACTIVITY'] = time();
+  session_regenerate_id(true);
 }
 
 function checkAccess() {
@@ -143,12 +149,12 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
   }
 
   //Whitelist name/surname fields
-  if (preg_match('/[^A-Za-z\']/',$firstname)) {
+  if (!cleanInput($firstname)) {
     $return->value = false;
     $return->msg = "Invalid First Name";
     return $return;
   } 
-  if (preg_match('/[^A-Za-z\']/',$lastname)) {
+  if (!cleanInput($lastname)) {
     $return->value = false;
     $return->msg = "Invalid Last Name";
     return $return;
@@ -423,13 +429,11 @@ function sendEmailWithPDF($userId, $email, $name, $subject, $body){
   return true;
 }
 
-
-
 /*
   Generates the PDF file that is given by user ID, and returns the created PDF document
 */
 function generateUserPDF($userId){
-  require('FPDF/fpdf_protection.php');
+  require_once('FPDF/fpdf_protection.php');
   $pdf = new FPDF();//create the instance
   $pdf->AddPage();
   $pdf->SetFont('Helvetica','B',18);//set the font style
@@ -437,7 +441,7 @@ function generateUserPDF($userId){
   $pdf->Cell(0,10,"Tan Numbers");//name the title
   $pdf->SetFont('Helvetica','',15);
   $pdf->Ln(15);//linebreak
-  $tans = getTansByUserId($userId);
+  $tans = selectTansByUserId($userId);
   $i = 0;
   foreach ($tans as $tan) {
     
@@ -449,7 +453,7 @@ function generateUserPDF($userId){
     $i++;
   }
 
-  return $doc2;
+  return $pdf;
 }
 
 function randomPassword() {
@@ -465,10 +469,7 @@ function randomPassword() {
 
 function cleanInput($inputString){
   $inputString = htmlspecialchars($inputString, ENT_QUOTES);
-  if (preg_match("/[^A-Za-z0-9]/", $inputString)){
-    return false;
-  }
-  return true;
+  return !preg_match("/[^A-Za-z0-9]/", $inputString);
 }
 
 ?>

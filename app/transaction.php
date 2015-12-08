@@ -39,13 +39,13 @@ function createTransaction($sender, $recipient, $amount, $description, $tan) {
   }
 
   //Whitelisting amount 
-  if (!is_numeric($amount)) {
+  if (!is_numeric($amount) || $amount < 1 || $amount > PHP_INT_MAX) {
     $return->value = false;
-    $return->msg = "Amount must be a number";
+    $return->msg = "Amount must be a number greater than zero but less than PHP_INT_MAX";
     return $return;
   }
   //Whitelisting TAN
-  if (empty($tan) or preg_match('/[^A-Z0-9]/',$tan)) {
+  if (empty($tan) or preg_match('/[^A-Za-z0-9]/',$tan)) {
     $return->value = false;
     $return->msg = "Invalid TAN";
     return $return;

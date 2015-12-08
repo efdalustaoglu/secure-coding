@@ -2,7 +2,7 @@
 
 if(!defined('BANK_APP')) { die('Direct access not permitted'); }
 define("APP_PATH", "/secure-coding");
-define("APP_DOMAIN", "localhost");
+define("APP_DOMAIN", "");
 
 // define constants
 define("DB_HOST", "localhost");

@@ -38,7 +38,7 @@ function openDb() {
 
   // check if connection was successful
   if (mysqli_connect_errno()) {
-    die("MYSQL connection failed: ". mysqli_connect_error());
+    die("MYSQL connection failed");
   }
 
   return $connection;
@@ -100,7 +100,7 @@ function executeQueryPrepared(&$stmt, &$connection, $findFirst = false) {
 
 // execute query that returns a recordset
 function executeQuery($sql, &$connection, $findFirst = false) {
-  $result = mysqli_query($connection, $sql) or die(mysqli_error($connection));
+  $result = mysqli_query($connection, $sql) or die("connection error");
   $resultSet = array();
   while ($row = mysqli_fetch_assoc($result)) {
     $resultSet[] = (object) $row;

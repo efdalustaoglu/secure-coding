@@ -9,10 +9,11 @@
 #include <openssl/sha.h>
 
 
-int32_t ProceedTransaction(MYSQL *mysql , char *userID, char *accountID, char *iban, double amount, int32_t a7, char *description) {
+int32_t ProceedTransaction(MYSQL *mysql , char *userID, char *accountID, char *iban, double amount, char *description) {
 	bool askApproval = false;
-	MYSQL_RES result;
+	MYSQL_RES *result;
 	MYSQL_ROW row;
+	int32_t status = 0;
 	
 	if (amount <= 10000) {
 		askApproval = amount < 10000 | amount != 10000 & amount >= 10000;
@@ -25,7 +26,7 @@ int32_t ProceedTransaction(MYSQL *mysql , char *userID, char *accountID, char *i
 	else{
 		char *query = malloc(0x2000);
 		sprintf(query, "SELECT balance FROM accounts WHERE account_id = %s", accountID);
-		queryLen = strlen(query);
+		int8_t queryLen = strlen(query);
 		status = mysql_real_query(mysql, query, queryLen);
 		free(query);
 		
@@ -163,7 +164,7 @@ int main(int argc, char ** argv) {
 			return 2;
 		}
 		else {
-			seek(file, 0, SEEK_END);
+			fseek(file, 0, SEEK_END);
 			int32_t fileOffset = ftell(file);
 			fseek(file, 0, SEEK_SET);
 			
@@ -189,8 +190,8 @@ int main(int argc, char ** argv) {
 					}
 					
 					while(true){
-						memset(mem1, 0, size);
-						memset(mem2, 0, size);
+						memset(mem1, 0, fileSize);
+						memset(mem2, 0, fileSize);
 						fgets(mem1, fileOffset, file);
 						if(memcmp(mem1, mem2, fileOffset) != 0) {
 							memcpy(mem2, mem1, fileSize);
@@ -261,7 +262,7 @@ int main(int argc, char ** argv) {
 								memset(temp, 0, 33);
 								
 								char temp2[64] = "";
-								memset(temp2, 0, 1 + strlen(infoString) + strLen(temp));
+								memset(temp2, 0, 1 + strlen(infoString) + strlen(temp));
 								
 								strcat(infoString, iban);
 								strcat(infoString, amountStr);
@@ -269,7 +270,7 @@ int main(int argc, char ** argv) {
 								strcat(infoString, arg5);
 								
 								SHA256(infoString, strlen(infoString), temp);
-								memcpy(temp2, hash, 32); 
+								memcpy(temp2, hash, 32);
 								memcpy((temp2 + 32), temp, 32);
 								
 								char temp3[64] = "";
@@ -301,9 +302,9 @@ int main(int argc, char ** argv) {
 					
 					char temp5[33] = "";
 					char temp6[2] = "";
-					int32_t i = 0;
-					for(i=0; i<32; i++){
-						sprintf(temp6, "%02x", *(hash+i));
+					int32_t j = 0;
+					for(j=0; j<32; j++){
+						sprintf(temp6, "%02x", *(hash+j));
 						strcat(temp5, temp6);
 					}
 					
@@ -311,8 +312,8 @@ int main(int argc, char ** argv) {
 					if (strcmp(temp5, arg6) == 0){
 						while(true){
 							result = 0;
-							memset(mem1, 0, size);
-							memset(mem2, 0, size);
+							memset(mem1, 0, fileSize);
+							memset(mem2, 0, fileSize);
 							fgets(mem1, fileOffset, file);
 							if(memcmp(mem1, mem2, fileOffset) != 0) {
 								memcpy(mem2, mem1, fileSize);
@@ -382,7 +383,7 @@ int main(int argc, char ** argv) {
 									}
 								
 									if(result == 0){
-										mysql_autocommit(my, 0);
+										mysql_autocommit(mysql, 0);
 										result = ProceedTransaction(mysql, arg2, arg3, iban, amount, description);
 									
 										if (result == 0){

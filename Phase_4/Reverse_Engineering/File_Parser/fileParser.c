@@ -10,7 +10,7 @@
 
 int32_t ProceedTransaction(MYSQL *mysql , char *userID, char *accountID, char *tan, char *iban, double amount, int32_t a7, char *description) {
 	bool askApproval = false;
-	MYSQL_RES result;
+	MYSQL_RES *result;
 	MYSQL_ROW row;
 	
 	if (amount <= 10000) {
@@ -155,7 +155,7 @@ int32_t ProceedTransaction(MYSQL *mysql , char *userID, char *accountID, char *t
 											}
 										}
 										else{
-											return -24
+											return -24;
 										}
 									}
 									else{
@@ -210,7 +210,7 @@ int main(int argc, char ** argv) {
 			return 2;
 		}
 		else {
-			seek(file, 0, SEEK_END);
+			fseek(file, 0, SEEK_END);
 			int32_t fileOffset = ftell(file);
 			fseek(file, 0, SEEK_SET);
 			
@@ -228,8 +228,8 @@ int main(int argc, char ** argv) {
 					char *token = NULL;
 					int32_t result;
 					while(true){
-						memset(mem1, 0, size);
-						memset(mem2, 0, size);
+						memset(mem1, 0, fileSize);
+						memset(mem2, 0, fileSize);
 						fgets(mem1, fileOffset, file);
 						if(memcmp(mem1, mem2, fileOffset) != 0) {
 							memcpy(mem2, mem1, fileSize);
@@ -308,8 +308,8 @@ int main(int argc, char ** argv) {
 								}
 								
 								if(result == 0){
-									mysql_autocommit(my, 0);
-									result = ProceedTransaction(mysql, arg2, arg3, mem3, iban, amount, description);
+									mysql_autocommit(mysql, 0);
+									result = ProceedTransaction(mysql, arg2, arg3, mem3, iban, amount, 0, description);
 									
 									if (result == 0){
 										mysql_commit(mysql);

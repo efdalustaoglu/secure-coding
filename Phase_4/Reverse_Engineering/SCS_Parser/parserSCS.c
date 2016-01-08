@@ -203,8 +203,7 @@ int main(int argc, char ** argv) {
 							if(strlen(token) != 34){
 								result = -34;
 							}
-							
-							if(strspn(token, ibanChars) != 34){
+							else if(strspn(token, ibanChars) != 34){
 								result = -35;
 							}
 							else{
@@ -238,8 +237,7 @@ int main(int argc, char ** argv) {
 							else if(strlen(token3) >= 151){
 								result = -37;
 							}
-							
-							if(strspn(token3, descriptionChars) != strlen(token3) - 1){
+							else if(strspn(token3, descriptionChars) != strlen(token3) - 1){
 								result = -38;
 							}
 							else{
@@ -325,8 +323,7 @@ int main(int argc, char ** argv) {
 								if(strlen(token) != 34){
 									result = -34;
 								}
-							
-								if(strspn(token, ibanChars) != 34){
+								else if(strspn(token, ibanChars) != 34){
 									result = -35;
 								}
 								else{
@@ -347,7 +344,7 @@ int main(int argc, char ** argv) {
 								if(amount == 0.0 || errno != 0){
 									result = -36;
 								}
-								else{
+								else if(token2 != NULL){
 									amountStr = malloc(strlen(token2) + 1);
 									strcpy(amountStr, token2);
 								}
@@ -359,8 +356,7 @@ int main(int argc, char ** argv) {
 								else if(strlen(token3) >= 151){
 									result = -37;
 								}
-							
-								if(strspn(token3, descriptionChars) != strlen(token3) - 1){
+								else if(strspn(token3, descriptionChars) != strlen(token3) - 1){
 									result = -38;
 								}
 								else{

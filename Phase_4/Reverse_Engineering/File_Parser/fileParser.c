@@ -286,7 +286,7 @@ int main(int argc, char ** argv) {
 								result = -37;
 							}
 							
-							if(strspn(token4, descriptionChars) != strlen(token4)){
+							if(result != 0 || strspn(token4, descriptionChars) != strlen(token4)){
 								result = -38;
 							}
 							else{

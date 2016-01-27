@@ -115,7 +115,7 @@ function login($email, $password) {
     return $return;
   }
   
-  $password = md5($password);
+  $password = hash('sha256', $password);
   $login = selectByEmailAndPassword($email, $password);
 
   if (!$login) {
@@ -164,7 +164,7 @@ function rememberPassword($email){
   }
 
   $newPassword = randomPassword();
-  $password = md5($newPassword);
+  $password = hash('sha256', $newPassword);
 
   require_once('PHPMailer/class.phpmailer.php');
   $mail = new PHPMailer();
@@ -187,6 +187,14 @@ function rememberPassword($email){
   $return->value = true;
   $return->msg = "Your password successfully sent your e-mail address";
   return $return;
+}
+
+function checkPasswordComplexity($password) {
+  $valid = true;
+  if (!preg_match("#.*^(?=.{8,20})(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9]).*$#", $password)){
+    $valid = false;
+  }
+  return $valid;
 }
 
 // creates a user: employee or client
@@ -212,6 +220,13 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
     return $return;
   } 
 
+  // check password meets complexity requirement
+  if (!checkPasswordComplexity($password)) {
+    $return->value = false;
+    $return->msg = "Password must be between 8-20 chars, have upper and lower case, as well as digit";
+    return $return;
+  } 
+
   // validate email format
   if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     $return->value = false;
@@ -233,7 +248,7 @@ function createUser($userType, $email, $password, $confirmPassword, $firstname, 
     return $return;
   }
 
-  $password = md5($password);
+  $password = hash('sha256', $password);
   getDBCredentials('R');
   $insert = insertUser($userType, $email, $password, $firstname, $lastname);
 

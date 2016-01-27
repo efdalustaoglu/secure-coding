@@ -125,7 +125,7 @@ function validateSCSTAN($tan) {
 
   $acctNum = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
   $dbUser = "root";
-  $dbPass = "";
+  $dbPass = "yadaandshadadb";
   $dbName = "bank_db";
   $command = "./tan_generator validate $acctNum '$tan' '$dbUser' '$dbPass' '$dbName'";
   

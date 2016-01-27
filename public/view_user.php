@@ -17,8 +17,9 @@ if ((isset($_POST['approve']) || isset($_POST['reject'])) && isset($_SESSION['us
   $id = $_POST['userid'];
   $decision = (isset($_POST['approve'])) ? true : false;
   $approver = getAuthUser()->userid;
+  $balance = $_POST['balance'];
   unset($_SESSION['usertoken']);
-  $approval = approveRegistration($id, $approver, $decision);
+  $approval = approveRegistration($id, $approver, $decision, $balance);
 
   if (!empty($approval->msg)) {
     $showMsg = $approval->msg;
@@ -45,7 +46,7 @@ function getSCS() {
 
   $acctNum = selectAccountByUserId(getAuthUser()->userid)->ACCOUNT_NUMBER;
   $dbUser = "root";
-  $dbPass = "";
+  $dbPass = "yadaandshadadb";
   $dbName = "bank_db";
   $command = "./tan_generator pin $acctNum '$dbUser' '$dbPass' '$dbName'";
   
@@ -96,7 +97,10 @@ include("header.php");
 
     <div class="pure-control-group">
       <label>Balance</label>
-      <span><?php echo number_format($user->BALANCE, 2, ".", ","); ?></span>
+      <span><?php if ($user->DATE_APPROVED === null && getAuthUser()->usertype === 'E'): ?>
+      <input name="balance" type="text" placeholder="Balance">
+     <?php else: ?>
+      <?php echo number_format($user->BALANCE, 2, ".", ","); endif;?></span>
     </div>
 
     <div class="pure-control-group">

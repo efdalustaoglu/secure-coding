@@ -61,7 +61,7 @@ function bind_array($stmt,&$row) {
 
 // execute query that does not return a recordset
 function executeNonQuery(&$stmt, &$connection) {
-
+  try {
   //Using prepared statements and parameterized queries:
   $result = $stmt->execute();
   $stmt->close();
@@ -70,10 +70,14 @@ function executeNonQuery(&$stmt, &$connection) {
   // as a non select query, it won't return a mysqli result set
   // it returns true or false depending on success or failure
   return $result;
+  } catch(Exception $e) {
+    throw new Exception("db error");
+  }
 }
 
 
 function executeQueryPrepared(&$stmt, &$connection, $findFirst = false) {
+  try {
   $resultSet = array();
   $row = array();
   if($stmt->execute()) {
@@ -96,10 +100,14 @@ function executeQueryPrepared(&$stmt, &$connection, $findFirst = false) {
     } 
   }
   return $resultSet;
+  } catch(Exception $e) {
+    throw new Exception("db error");
+  }
 }
 
 // execute query that returns a recordset
 function executeQuery($sql, &$connection, $findFirst = false) {
+  try {
   $result = mysqli_query($connection, $sql) or die("connection error");
   $resultSet = array();
   while ($row = mysqli_fetch_assoc($result)) {
@@ -114,6 +122,9 @@ function executeQuery($sql, &$connection, $findFirst = false) {
   } 
 
   return $resultSet;
+  } catch(Exception $e) {
+    throw new Exception("db error");
+  }
 }
 
 function escape($value, &$connection) {

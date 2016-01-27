@@ -25,10 +25,17 @@ function clearCSRFToken() {
 
 function throttleAccess($func) {
   startSession();
+
+  // if we have set a function throttle timestamp (e.g. throttle_login) and
+  // current time minus the timestamp value is more than 10 seconds
+  // and the request is coming from the same ip address, then ban the user
+  // for 1 minute
   if (isset($_SESSION['throttle_'.$func]) && 
     (time() - $_SESSION['throttle_'.$func] < 10) &&
     ($_SESSION['throttle_ip_'.$func] === $_SERVER['REMOTE_ADDR'])) {
-    die("access banned");
+    
+    $_SESSION['throttle_'.$func] = time() + 60;
+    die("access banned for 1 minute");
   }
   $_SESSION['throttle_'.$func] = time();
   $_SESSION['throttle_ip_'.$func] = $_SERVER['REMOTE_ADDR'];
@@ -47,7 +54,7 @@ function saveSession($email, $usertype, $firstname, $lastname, $userid) {
 // start session
 function startSession($privileged = false) {
   if (session_id() === '') {
-    $secure = false;
+    $secure = true;
     $httponly = true;
     $path = APP_PATH;
     $domain = APP_DOMAIN;
@@ -62,9 +69,12 @@ function startSession($privileged = false) {
 }
 
 function checkSessionActivity() {
+  // if time of last activity on the site is more than 10 mins, then logout
   if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > 600)) {
     logout();
   }
+
+  // else, reset last activity timestamp, and regenrate session id
   $_SESSION['LAST_ACTIVITY'] = time();
   session_regenerate_id(true);
 }
@@ -96,7 +106,6 @@ function getAuthUser() {
 
 // logs in user
 function login($email, $password) {
-  throttleAccess('login');
   $return  = returnValue();
   getDBCredentials('L');
 
@@ -112,6 +121,7 @@ function login($email, $password) {
   if (!$login) {
     $return->value = false;
     $return->msg = "Invalid login credentials";
+    throttleAccess('login');
     return $return;
   }
 
@@ -181,7 +191,6 @@ function rememberPassword($email){
 
 // creates a user: employee or client
 function createUser($userType, $email, $password, $confirmPassword, $firstname, $lastname) {
-  throttleAccess('createuser');
   $return  = returnValue();
 
   // check for empty fields

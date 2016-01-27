@@ -1,3 +1,19 @@
 RewriteEngine On
+
+# redirect to https page
 RewriteCond %{HTTPS} !=on
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# remove HTTP TRACE method
+RewriteCond %{REQUEST_METHOD} ^TRACE
+RewriteRule .* - [F]
+
+# deny everything
+Order Allow,Deny
+Deny from all
+
+# allow only these file extensions
+<FilesMatch "\.(css|js|php|jar)$">
+Order Allow,Deny
+Allow from all
+</FilesMatch>

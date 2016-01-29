@@ -229,7 +229,7 @@ int publishTan(int accountNumber, char *tan){
 	}
 
 	// create an SQL statement to insert the TAN into the 'tans' table
-	if(sprintf(query, "INSERT INTO tans (TAN_NUMBER, CLIENT_ACCOUNT, DATE_CREATED, STATUS) VALUES ('%s','%s', CURDATE(), 'u')", tan, row[0]) < 0){
+	if(sprintf(query, "INSERT INTO tans (TAN_NUMBER, CLIENT_ACCOUNT, DATE_CREATED, STATUS) VALUES ('%s','%s', CURDATE(), 'V')", tan, row[0]) < 0){
 		return INTERNAL_ERROR;
 	}
 

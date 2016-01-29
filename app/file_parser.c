@@ -573,6 +573,36 @@ int copyTrimmedString(char *source, char *destination, short destinationMaxSize)
 
 
 /**
+ * Frees memory occupied on the heap
+ * 
+ * @param transaction Pointer to a struct transaction, that may occupy memory on the heap
+**/
+
+void releaseMemory(transaction_info *transaction){
+	if(transaction != NULL){
+		if(transaction->sender_account != NULL){
+			if(transaction->sender_account->date_created != NULL){
+				free(transaction->sender_account->date_created);
+			}
+			free(transaction->sender_account);
+		}
+		if(transaction->recipient_account != NULL){
+			if(transaction->recipient_account->date_created != NULL){
+				free(transaction->recipient_account->date_created);
+			}
+			free(transaction->recipient_account);
+		}
+		if(transaction->tan != NULL){
+			free(transaction->tan);
+		}
+		free(transaction);
+		transaction = NULL;
+	}
+}
+
+
+
+/**
  * Reads the content of a given file and extracts information about the sender's and recipient's accounts, the amount
  * of money to transfer and the TAN. The file content should have the format presented below. Lines that are empty
  * or have arbitrary content are automatically skipped during the parsing process. The four keywords
@@ -595,9 +625,11 @@ int copyTrimmedString(char *source, char *destination, short destinationMaxSize)
  *               success followed by the values of SENDER_ACCOUNT, RECIPIENT_ACCOUNT, AMOUNT, TAN, separated
  *               by a space character
 **/
-int parseFile(const char *path, transaction_info *transaction) {
+int parseFile(const char *path) {
+	int result = 0;
+	
 	// check if parameter is NULL
-	if(path == NULL || transaction == NULL){
+	if(path == NULL){
 		return PARAMETER_ERROR;
 	}
 	
@@ -630,17 +662,15 @@ int parseFile(const char *path, transaction_info *transaction) {
 		return IO_ACCESS_ERROR;
 	}
 	else{
-
-		// variable to store one line (maximum 64 characters) of the input file
-		char line[64] = {0};
-		short stringLength = 0;
-		
 		while(!feof(textfile)){
+			char line[64] = {0};
+			short stringLength = 0;
+			
 			if(fgets(line, 64, textfile)){
 				if(line[63] != 0){
 					line[63] = 0;
 				}
-
+				
 				// we check if the line starts with one of the key words "SENDER_ACCOUNT:", "RECIPIENT_ACCOUNT:",
 				// "AMOUNT:" or "TAN:". If it does, we extract the information given behind the key word and store it
 				// in the designated char buffer. stringLength holds the length of the information stored, including a trailing
@@ -660,7 +690,21 @@ int parseFile(const char *path, transaction_info *transaction) {
 					//printf("amount: %d, %s\n", amount, amount);
 				}
 				else if(strstr(line, "TAN:") == line){
-					stringLength = copyTrimmedString(line + 4, tan, 16);
+					if(*tan != 0){
+						// if *tan != 0 another tan has been read before. we have to check if the new tan is the same as the one before
+						// if not, the status of the old tan has to be updated to 'used'
+						char tan_temp[16] = {0};
+						memcpy(tan_temp, tan, 16);
+						
+						stringLength = copyTrimmedString(line + 4, tan, 16);
+						
+						if(strcmp(tan, tan_temp) != 0){
+							updateTANStatus(tan_temp);
+						}
+					}
+					else{
+						stringLength = copyTrimmedString(line + 4, tan, 16);
+					}
 					//printf("tan: %d, %s\n", tan, tan);
 				}
 				else{
@@ -680,85 +724,88 @@ int parseFile(const char *path, transaction_info *transaction) {
 					fclose(textfile);
 					return FILE_FORMAT_ERROR;
 				}
+				
+				// check if all four strings have been set to a value 
+				if(*sender != 0 && *recipient != 0 && *amount != 0 && *tan != 0){
+					unsigned long lng_sender = 0;
+					unsigned long lng_recipient = 0;
+					double dbl_amount = 0;
+					
+					// strtoul is for unsigned long; a similar secure function for int doesn't exist; the similar atoi() function doesn't protect
+					// from overflows
+					lng_sender = strtoul(sender, NULL, 10);
+					if(lng_sender == 0 || lng_sender > INT_MAX){
+						fclose(textfile);
+						return FILE_FORMAT_ERROR;
+					}
+		
+					lng_recipient = strtoul(recipient, NULL, 10);
+					if(lng_recipient == 0 || lng_recipient > INT_MAX){
+						fclose(textfile);
+						return FILE_FORMAT_ERROR;
+					}
+		
+					// read the amount as double, as there's no such function for float
+					dbl_amount = strtod(amount, NULL);
+					if(dbl_amount == 0.0 || dbl_amount == HUGE_VAL || dbl_amount == -HUGE_VAL){
+						fclose(textfile);
+						return FILE_FORMAT_ERROR;
+					}
+					
+					transaction_info *transaction;
+					transaction = (transaction_info *) malloc(sizeof(transaction_info));
+					if(transaction == NULL){
+						return MEMORY_ERROR;
+					}
+					
+					transaction->sender_account = getAccount((int) lng_sender);
+					transaction->recipient_account = getAccount((int) lng_recipient);
+					transaction->amount = dbl_amount;
+					transaction->tan = (char *) malloc(16);
+					memcpy(transaction->tan, tan, 16);
+					
+					// check for obvious errors
+					if(transaction->sender_account == NULL || transaction->recipient_account == NULL){
+						releaseMemory(transaction);
+						return ACCOUNT_NOT_FOUND;
+					}
+					
+					// perform the transaction
+					result = transferMoney(transaction);
+					if(result != RETURN_SUCCESS){
+						releaseMemory(transaction);
+						return result;
+					}
+	
+					// safe the transaction
+					result = registerTransaction(transaction);
+					if(result != RETURN_SUCCESS){
+						releaseMemory(transaction);
+						return result;
+					}
+					
+					releaseMemory(transaction);
+					memset(sender, 0, 16);
+					memset(recipient, 0, 16);
+					memset(amount, 0, 16);
+				}
+				
 			}
 		}
 		
-		// check if all four strings have been set to a value 
-		if(*sender == 0 || *recipient == 0 || *amount == 0 || *tan == 0){
-			fclose(textfile);
-			return FILE_FORMAT_ERROR;
+		if(*tan != 0){
+			result = updateTANStatus(tan);
+			if(result != RETURN_SUCCESS){
+				return result;
+			}
 		}
 		
-		// after we have read the data, we have to convert the account numbers to integers and the amount to float
-		
-		unsigned long lng_sender = 0;
-		unsigned long lng_recipient = 0;
-		double dbl_amount = 0;
-		
-		// strtoul is for unsigned long; a similar secure function for int doesn't exist; the similar atoi() function doesn't protect
-		// from overflows
-		lng_sender = strtoul(sender, NULL, 10);
-		if(lng_sender == 0 || lng_sender > INT_MAX){
-			fclose(textfile);
-			return FILE_FORMAT_ERROR;
-		}
-		
-		lng_recipient = strtoul(recipient, NULL, 10);
-		if(lng_recipient == 0 || lng_recipient > INT_MAX){
-			fclose(textfile);
-			return FILE_FORMAT_ERROR;
-		}
-		
-		// read the amount as double, as there's no such function for float
-		dbl_amount = strtod(amount, NULL);
-		if(dbl_amount == 0.0 || dbl_amount == HUGE_VAL || dbl_amount == -HUGE_VAL){
-			fclose(textfile);
-			return FILE_FORMAT_ERROR;
-		}
-		
-		transaction->sender_account = getAccount((int) lng_sender);
-		transaction->recipient_account = getAccount((int) lng_recipient);
-		transaction->amount = dbl_amount;
-		transaction->tan = (char *) malloc(16);
-		memcpy(transaction->tan, tan, 16);
-	
-		//printf("%d %d %d %.2f %s\n", RETURN_SUCCESS, (int) transaction->sender_account->account_number, (int) transaction->recipient_account->account_number, (float) transaction->amount, transaction->tan);
-		
-		fclose(textfile);
-		return RETURN_SUCCESS;
 	}
-	
 }
 
 
 
-/**
- * Frees memory occupied on the heap
- * 
- * @param transaction Pointer to a struct transaction, that may occupy memory on the heap
-**/
 
-void releaseMemory(transaction_info *transaction){
-	if(transaction != NULL){
-		if(transaction->sender_account != NULL){
-			if(transaction->sender_account->date_created != NULL){
-				free(transaction->sender_account->date_created);
-			}
-			free(transaction->sender_account);
-		}
-		if(transaction->recipient_account != NULL){
-			if(transaction->recipient_account->date_created != NULL){
-				free(transaction->recipient_account->date_created);
-			}
-			free(transaction->recipient_account);
-		}
-		if(transaction->tan != NULL){
-			free(transaction->tan);
-		}
-		free(transaction);
-		transaction = NULL;
-	}
-}
 
 
 
@@ -813,40 +860,8 @@ int main(int argc, char **argv){
 	}
 	
 	// read the file
-	result = parseFile(path, transaction);
+	result = parseFile(path);
 	if(result != RETURN_SUCCESS){
-		releaseMemory(transaction);
-		printf("%d\n", result);
-		return result;
-	}
-	
-	// check for obvious errors
-	if(transaction->sender_account == NULL || transaction->recipient_account == NULL){
-		releaseMemory(transaction);
-		printf("%d\n", ACCOUNT_NOT_FOUND);
-		return ACCOUNT_NOT_FOUND;
-	}
-	
-	// perform the transaction
-	result = transferMoney(transaction);
-	if(result != RETURN_SUCCESS){
-		releaseMemory(transaction);
-		printf("%d\n", result);
-		return result;
-	}
-	
-	// update the TAN status in the database
-	result = updateTANStatus(transaction->tan);
-	if(result != RETURN_SUCCESS){
-		releaseMemory(transaction);
-		printf("%d\n", result);
-		return result;
-	}
-	
-	// safe the transaction
-	result = registerTransaction(transaction);
-	if(result != RETURN_SUCCESS){
-		releaseMemory(transaction);
 		printf("%d\n", result);
 		return result;
 	}
@@ -858,8 +873,6 @@ int main(int argc, char **argv){
 		printf("%d\n", result);
 		return result;
 	}
-
-	releaseMemory(transaction);
 	
 	// exit
 	printf("%d\n", RETURN_SUCCESS);

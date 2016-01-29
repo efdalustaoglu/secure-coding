@@ -48,7 +48,7 @@ if (isset($_POST['upload'])) {
     $program = realpath("../app/file_parser");
     $program_directory = substr($program, 0, strrpos($program, "/"));
     chdir($program_directory);
-    $command = "./file_parser ".$upload->value." root yadaandshadadb bank_db";
+    $command = "./file_parser ".$upload->value." root yadaandshadadb bank_db " . getAuthUser()->userid;
     $output = shell_exec($command);
     unlink($upload->value);
     

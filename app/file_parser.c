@@ -24,6 +24,7 @@
 #define SENDER_RECEIVER_EQUAL -9
 #define TAN_INVALID -10
 #define CRITICAL_ACCOUNT_BALANCE -11
+#define MISSING_AUTHENTICATION -12
 
 
 // Definition of structs
@@ -48,6 +49,7 @@ char *db_user = "root";
 char *db_password = "samurai";
 char *db_name = "bank_db";
 
+int logged_in_user_id = 0;
 
 
 //-------------------------------------------------------------------------- Database Operations ------------------------------------------------------------------------
@@ -554,7 +556,7 @@ int copyTrimmedString(char *source, char *destination, short destinationMaxSize)
 	// copy byte by byte from the source string to the destination string, until we reach a NULL character,
 	// a whitespace character (including ' ', '\t', '\n', '\r', '\f', 'v') or the maximum size - 1 of the destination string
 	while(bytesCopied < destinationMaxSize - 1 && !isspace(*source) && *source != 0){
-		if(*source == '\'' || *source == '\"' || *source == '#' || *source == '\\' || *source == '-' || *source == '\%' || *source == '\_' || *source == '+' || *source == '*' || *source == '?' || *source == '=' || *source == '$' || *source == '&' || *source == '/'){
+		if(*source == '\'' || *source == '\"' || *source == '#' || *source == '\\' || *source == '-' || *source == '\%' || *source == '+' || *source == '*' || *source == '?' || *source == '=' || *source == '$' || *source == '&' || *source == '/'){
 			return PARAMETER_ERROR;   // these characters have to be caught 
 		}
 		*destination = *source;
@@ -770,6 +772,14 @@ int parseFile(const char *path) {
 						return ACCOUNT_NOT_FOUND;
 					}
 					
+					// check if the account retrieved from the file belongs to the user who's logged into the system
+					if(logged_in_user_id != 0){
+						if(transaction->sender_account->user != logged_in_user_id){
+							releaseMemory(transaction);
+							return MISSING_AUTHENTICATION;
+						}
+					}
+					
 					// perform the transaction
 					result = transferMoney(transaction);
 					if(result != RETURN_SUCCESS){
@@ -780,6 +790,12 @@ int parseFile(const char *path) {
 					// safe the transaction
 					result = registerTransaction(transaction);
 					if(result != RETURN_SUCCESS){
+						if(*tan != 0){
+							result = updateTANStatus(tan);
+							if(result != RETURN_SUCCESS){
+								return result;
+							}
+						}
 						releaseMemory(transaction);
 						return result;
 					}
@@ -818,7 +834,7 @@ int parseFile(const char *path) {
 int main(int argc, char **argv){
 	int result = 0;
 	
-	if(argc != 5){
+	if(argc < 5 || argc > 6){
 		printf("%d\n", PARAMETER_ERROR);
 		return PARAMETER_ERROR;
 	}
@@ -834,6 +850,10 @@ int main(int argc, char **argv){
 	db_user = argv[2];
 	db_password = argv[3];
 	db_name = argv[4];
+	
+	if(argc > 5){
+		logged_in_user_id = atoi(argv[5]);
+	}
 	
 	// reserve memory for the new transaction
 	transaction_info *transaction = (transaction_info *) malloc(sizeof(transaction_info));

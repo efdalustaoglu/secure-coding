@@ -1,2 +1,2 @@
 # secure-coding
-Secure Coding
+TU München Secure Coding Course WS15 Project
